@@ -1,39 +1,82 @@
-import { useEffect, useState } from "react"
-import { TonConnectButton, TonConnectUIProvider } from "@tonconnect/ui-react"
-import { initTelegram, getUser } from "./telegram"
+import { useEffect, useRef, useState } from "react"
 import { api } from "./api"
-import { CrashGame } from "./CrashGame"
-import "./styles.css"
 
-const MANIFEST_URL = "https://your-domain.com/tonconnect-manifest.json"
+type Phase = "waiting" | "running" | "crashed"
 
-function Inner() {
-  const [balance, setBalance] = useState<number | null>(null)
-  const user = getUser()
+const WS_URL = import.meta.env.VITE_WS_URL ?? "wss://api.example.com/ws"
+
+export function CrashGame() {
+  const [phase, setPhase] = useState<Phase>("waiting")
+  const [multiplier, setMultiplier] = useState(1.0)
+  const [bet, setBet] = useState(1)
+  const [betId, setBetId] = useState<string | null>(null)
+  const [message, setMessage] = useState("")
+  const wsRef = useRef<WebSocket | null>(null)
 
   useEffect(() => {
-    initTelegram()
-    api.getBalance().then((r) => setBalance(r.balance)).catch(() => setBalance(0))
+    const ws = new WebSocket(WS_URL)
+    wsRef.current = ws
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data)
+      if (msg.type === "tick") {
+        setPhase("running")
+        setMultiplier(msg.multiplier)
+      } else if (msg.type === "crash") {
+        setPhase("crashed")
+        setMultiplier(msg.crashPoint)
+        setBetId(null)
+      } else if (msg.type === "waiting") {
+        setPhase("waiting")
+        setMultiplier(1.0)
+      }
+    }
+    return () => ws.close()
   }, [])
 
-  return (
-    <div className="app">
-      <header>
-        <div>
-          <div className="hello">Привет, {user?.first_name ?? "игрок"}</div>
-          <div className="balance">Баланс: {balance ?? "..."} TON</div>
-        </div>
-        <TonConnectButton />
-      </header>
-      <CrashGame />
-    </div>
-  )
-}
+  async function onBet() {
+    try {
+      const { betId } = await api.placeBet(bet)
+      setBetId(betId)
+      setMessage(`Ставка ${bet} TON принята`)
+    } catch {
+      setMessage("Ошибка ставки")
+    }
+  }
 
-export default function App() {
+  async function onCashout() {
+    if (!betId) return
+    try {
+      const { payout } = await api.cashout(betId)
+      setMessage(`Выведено: ${payout} TON`)
+      setBetId(null)
+    } catch {
+      setMessage("Не успел вывести")
+    }
+  }
+
   return (
-    <TonConnectUIProvider manifestUrl={MANIFEST_URL}>
-      <Inner />
-    </TonConnectUIProvider>
+    <div className="crash">
+      <div className={`multiplier ${phase}`}>{multiplier.toFixed(2)}x</div>
+      <div className="status">
+        {phase === "waiting" && "Ожидание раунда..."}
+        {phase === "running" && "Летим 🚀"}
+        {phase === "crashed" && "Краш 💥"}
+      </div>
+      <div className="controls">
+        <input
+          type="number"
+          min={0.1}
+          step={0.1}
+          value={bet}
+          onChange={(e) => setBet(Number(e.target.value))}
+        />
+        {!betId ? (
+          <button disabled={phase !== "waiting"} onClick={onBet}>Ставка</button>
+        ) : (
+          <button disabled={phase !== "running"} onClick={onCashout}>Забрать</button>
+        )}
+      </div>
+      {message && <div className="message">{message}</div>}
+    </div>
   )
 }
