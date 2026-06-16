@@ -7,19 +7,18 @@ import { Settings, loadSkin, loadBg, loadVib } from "./Settings"
 import { Profile } from "./Profile"
 import { Cases } from "./Cases"
 import { Season } from "./Season"
-import { useT } from "./i18n"
+import { DepositModal } from "./DepositModal"
 import "./styles.css"
 
 export default function App() {
   const [me, setMe] = useState<MeInfo | null>(null)
   const [tab, setTab] = useState("crash")
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [depositOpen, setDepositOpen] = useState(false)
   const [skin, setSkin] = useState(loadSkin())
   const [bg, setBg] = useState(loadBg())
-  const [vib, setVib] = useState(loadVib())
-  const [toast, setToast] = useState("")
+  const [_vib, setVib] = useState(loadVib())
   const tgUser = getUser()
-  const { t } = useT()
 
   useEffect(() => {
     initTelegram()
@@ -34,21 +33,15 @@ export default function App() {
     return () => clearInterval(i)
   }, [])
 
-  function onTopup() {
-    haptic("medium")
-    setToast(t("topup_soon"))
-    setTimeout(() => setToast(""), 2200)
-  }
-
   return (
     <div className={`app theme-${bg}`}>
       <header className="top-bar">
         <div className="online"><span>👤</span><span>{me?.online ?? 0}</span></div>
         <button className="icon-btn" onClick={() => { haptic("light"); setSettingsOpen(true) }}>⚙️</button>
-        <div className="balance-chip" onClick={onTopup}>
+        <div className="balance-chip" onClick={() => { haptic("medium"); setDepositOpen(true) }}>
           <span className="ton-icon">💎</span>
           <span>{(me?.balance ?? 0).toFixed(2)}</span>
-          <button className="plus-btn" onClick={(e) => { e.stopPropagation(); onTopup() }}>+</button>
+          <button className="plus-btn" onClick={(e) => { e.stopPropagation(); haptic("medium"); setDepositOpen(true) }}>+</button>
         </div>
       </header>
 
@@ -66,8 +59,7 @@ export default function App() {
         onClose={() => setSettingsOpen(false)}
         onChange={(s) => { setSkin(s.skin); setBg(s.bg); setVib(s.vib) }}
       />
-
-      {toast && <div className="toast top">{toast}</div>}
+      <DepositModal open={depositOpen} onClose={() => setDepositOpen(false)} />
     </div>
   )
 }

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react"
 import { api, deriveWsUrl, type Player, type HistoryItem } from "./api"
 import { useT } from "./i18n"
 import { haptic } from "./telegram"
-import { loadSkin, loadBg } from "./Settings"
 
 type Phase = "waiting" | "running" | "crashed"
 
@@ -29,16 +28,19 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [players, setPlayers] = useState<Player[]>([])
   const [message, setMessage] = useState("")
-  const [floatAnim, setFloatAnim] = useState(0) // continuous bobbing 0..1
+  const [waitingEndsAt, setWaitingEndsAt] = useState<number>(Date.now() + 10000)
+  const [now, setNow] = useState(Date.now())
+  const [floatT, setFloatT] = useState(0)
   const phaseRef = useRef<Phase>("waiting")
   useEffect(() => { phaseRef.current = phase }, [phase])
 
-  // Continuous bobbing for the rocket so it's always alive on screen.
+  // Continuous animation tick: bobbing + countdown updates at 60fps.
   useEffect(() => {
     let raf = 0
     const start = performance.now()
-    const loop = (now: number) => {
-      setFloatAnim(((now - start) / 1000) % 1000)
+    const loop = (n: number) => {
+      setFloatT((n - start) / 1000)
+      setNow(Date.now())
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
@@ -50,7 +52,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     api.players().then((r) => setPlayers(r.players)).catch(() => {})
   }, [])
 
-  // WS connect with polling fallback. Rocket always flies even if WS is blocked.
+  // WS connect with polling fallback. Rocket always animates.
   useEffect(() => {
     let ws: WebSocket | null = null
     let reconnect: any = null
@@ -58,7 +60,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     let wsAlive = false
     let lastPhase: Phase = "waiting"
 
-    function applyState(s: { phase: Phase; multiplier: number; crashPoint?: number; players?: Player[] }) {
+    function applyState(s: any) {
       if (s.phase !== lastPhase) {
         if (s.phase === "crashed") haptic("error")
         if (s.phase === "waiting") setBetId(null)
@@ -69,6 +71,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
       }
       setPhase(s.phase)
       setMultiplier(s.phase === "crashed" && s.crashPoint ? s.crashPoint : s.multiplier)
+      if (s.waitingEndsAt) setWaitingEndsAt(s.waitingEndsAt)
       if (s.players) setPlayers(s.players)
     }
 
@@ -79,7 +82,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
         api.state()
           .then((s) => applyState(s as any))
           .catch(() => {})
-          .finally(() => { pollTimer = setTimeout(tick, 400) })
+          .finally(() => { pollTimer = setTimeout(tick, 350) })
       }
       tick()
     }
@@ -100,6 +103,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
           }
           else if (msg.type === "waiting") {
             setPhase("waiting"); setMultiplier(1.0); setBetId(null); lastPhase = "waiting"
+            if (msg.waitingEndsAt) setWaitingEndsAt(msg.waitingEndsAt)
             api.players().then((r) => setPlayers(r.players)).catch(() => {})
           }
           else if (msg.type === "players") setPlayers(msg.players)
@@ -113,7 +117,6 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
       } catch { startPolling() }
     }
     connect()
-    // Always also start polling after 1.5s as a safety net.
     const guard = setTimeout(() => { if (!wsAlive) startPolling() }, 1500)
     return () => {
       clearTimeout(reconnect); clearTimeout(pollTimer); clearTimeout(guard)
@@ -137,20 +140,36 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     }
   }
 
+  // Countdown
+  const msLeft = Math.max(0, waitingEndsAt - now)
+  const secLeft = Math.ceil(msLeft / 1000)
+  const countdownProgress = Math.max(0, Math.min(1, msLeft / 10000))
+
   // Rocket position along curve.
-  // X grows with multiplier (log scale). Y goes up (smaller is higher in SVG).
   const m = multiplier
   const progress = Math.min(1, Math.log(Math.max(1, m)) / Math.log(20))
-  const rocketX = 8 + progress * 78 // 8..86 of 100
-  const rocketY = 88 - progress * 70 // 88..18
-  const bobX = Math.sin(floatAnim * 4) * 1.2
-  const bobY = Math.cos(floatAnim * 3) * 1.2
-  const rotation = phase === "crashed" ? 90 : -40 - progress * 10
+  // During waiting: rocket sits at launch pad (bottom-left), wobbling.
+  // During running: rocket flies along arc.
+  // During crashed: rocket flies off-screen up-right.
+  let rocketX: number, rocketY: number, rotation: number
+  if (phase === "waiting") {
+    rocketX = 12 + Math.sin(floatT * 2) * 0.6
+    rocketY = 80 + Math.cos(floatT * 2.4) * 0.8
+    rotation = -30
+  } else if (phase === "crashed") {
+    rocketX = 8 + progress * 78
+    rocketY = 88 - progress * 70
+    rotation = 90
+  } else {
+    rocketX = 8 + progress * 78 + Math.sin(floatT * 6) * 0.7
+    rocketY = 88 - progress * 70 + Math.cos(floatT * 7) * 0.7
+    rotation = -42 - progress * 8
+  }
 
-  // Build trajectory path.
+  // Trajectory curve.
   function buildPath() {
     const pts: string[] = []
-    const steps = 30
+    const steps = 40
     for (let i = 0; i <= steps; i++) {
       const p = (i / steps) * progress
       const x = 8 + p * 78
@@ -160,58 +179,113 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     return pts.join(" ")
   }
 
+  // Live ticker on the left: synthesize values up to current multiplier.
+  // Shows a vertical column of recent fractions (always changing during run).
+  const tickerValues: number[] = []
+  if (phase === "running") {
+    for (let i = 0; i < 7; i++) {
+      const factor = 1 - i * 0.08
+      tickerValues.push(Math.max(1, m * factor))
+    }
+  }
+
   const buttonLabel =
     betId && phase === "running"
       ? `${t("cashout")} ${(bet * multiplier).toFixed(2)} TON`
-      : t("place_bet")
+      : phase === "waiting"
+        ? `${t("place_bet")} · ${secLeft}s`
+        : t("place_bet")
 
   return (
     <div className="crash-screen">
       <div className={`sky bg-${bg}`}>
         <div className="stars" />
+        <div className="stars stars-2" />
         {bg === "planet" && <div className="planet-bg" />}
 
-        {/* Grid + curve only during running. */}
+        {/* Curve + filled area during running/crashed */}
         <svg className="chart" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
             <linearGradient id="trail" x1="0" y1="100%" x2="100%" y2="0">
-              <stop offset="0%" stopColor="#36b1ff" stopOpacity="0" />
-              <stop offset="50%" stopColor="#4ade80" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#a3ff5e" stopOpacity="1" />
+              <stop offset="0%" stopColor="#ff6b35" stopOpacity="0.3" />
+              <stop offset="40%" stopColor="#ffb347" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#ffe66d" stopOpacity="1" />
             </linearGradient>
             <linearGradient id="fill" x1="0" y1="0" x2="0" y2="100%">
-              <stop offset="0%" stopColor="#36b1ff" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#36b1ff" stopOpacity="0" />
+              <stop offset="0%" stopColor="#ff6b35" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#ff6b35" stopOpacity="0" />
             </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="0.8" result="b" />
+              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
           {phase !== "waiting" && (
             <>
-              <path d={`${buildPath()} L${rocketX},88 L8,88 Z`} fill="url(#fill)" />
-              <path d={buildPath()} fill="none" stroke="url(#trail)" strokeWidth="1.6" strokeLinecap="round" />
+              <path d={`${buildPath()} L${rocketX.toFixed(2)},88 L8,88 Z`} fill="url(#fill)" />
+              <path d={buildPath()} fill="none" stroke="url(#trail)" strokeWidth="1.6" strokeLinecap="round" filter="url(#glow)" />
             </>
           )}
         </svg>
 
+        {/* Big center multiplier */}
         <div className={`big-multiplier ${phase}`}>
-          {phase === "waiting" ? "" : m.toFixed(2) + (phase === "crashed" ? "×" : "")}
+          {phase === "waiting"
+            ? ""
+            : m.toFixed(2) + (phase === "crashed" ? "×" : "×")}
         </div>
 
+        {/* Countdown ring during waiting */}
+        {phase === "waiting" && (
+          <div className="countdown-wrap">
+            <svg className="countdown-ring" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="52" className="ring-bg" />
+              <circle
+                cx="60" cy="60" r="52"
+                className="ring-fg"
+                strokeDasharray={2 * Math.PI * 52}
+                strokeDashoffset={(1 - countdownProgress) * 2 * Math.PI * 52}
+              />
+            </svg>
+            <div className="countdown-num">{secLeft}</div>
+            <div className="countdown-label">{t("waiting")}</div>
+          </div>
+        )}
+
+        {/* Live ticker on the left */}
+        {phase === "running" && (
+          <div className="live-tape">
+            {tickerValues.map((v, i) => (
+              <div
+                key={i}
+                className="tape-num"
+                style={{ opacity: 1 - i * 0.13, fontSize: `${18 - i * 1.4}px` }}
+              >
+                {v.toFixed(2)}×
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Rocket with flame trail */}
         <div
           className={`rocket ${phase}`}
           style={{
-            left: `${rocketX + bobX}%`,
-            top: `${rocketY + bobY}%`,
+            left: `${rocketX}%`,
+            top: `${rocketY}%`,
             transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
           }}
         >
-          {SKIN_EMOJI[skin] || "🚀"}
+          {phase === "running" && (
+            <div className="flame" style={{ height: `${20 + Math.sin(floatT * 30) * 6}px` }} />
+          )}
+          <span className="rocket-emoji">{SKIN_EMOJI[skin] || "🚀"}</span>
         </div>
 
-        {phase === "crashed" && <div className="crash-overlay">{t("crashed").toUpperCase()}</div>}
+        {phase === "crashed" && <div className="crash-overlay">💥 {t("crashed").toUpperCase()}</div>}
       </div>
 
       <div className="history-strip">
-        {phase === "waiting" && <div className="pill waiting-pill">{t("waiting")}</div>}
         {history.slice(0, 12).map((h, i) => (
           <div key={h.roundId + i} className={`pill ${pillColor(h.crashPoint)}`}>{h.crashPoint.toFixed(2)}</div>
         ))}

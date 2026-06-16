@@ -2,22 +2,22 @@ import { useState } from "react"
 import { useT, LANGS, setLang, type Lang } from "./i18n"
 import { haptic, shareToTelegram, copyText } from "./telegram"
 import type { MeInfo } from "./api"
+import { DepositModal } from "./DepositModal"
 
 export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSettings: () => void }) {
   const { t, lang } = useT()
   const [langOpen, setLangOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [toast, setToast] = useState("")
+  const [depOpen, setDepOpen] = useState(false)
   const flag = LANGS.find((l) => l.id === lang)?.flag ?? "🌐"
 
   const xpPct = me ? Math.min(100, (me.xp / Math.max(1, me.xpNext)) * 100) : 0
   const inviteUrl = me?.inviteUrl || ""
 
   function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(""), 1800)
+    setToast(msg); setTimeout(() => setToast(""), 1800)
   }
-
   async function onCopy() {
     if (!inviteUrl) { showToast("—"); return }
     const ok = await copyText(inviteUrl)
@@ -29,7 +29,6 @@ export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSetti
     haptic("medium")
     shareToTelegram(inviteUrl, "🚀 Играй в KAZAH вместе со мной!")
   }
-  function onTopup() { haptic("medium"); showToast(t("topup_soon")) }
   function onRewards() { haptic("light"); showToast(t("coming_soon") + " 🏆") }
 
   return (
@@ -59,11 +58,11 @@ export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSetti
         <div className="xp-bar">
           <div className="xp-fill" style={{ width: `${xpPct}%` }} />
         </div>
-        <div className="xp-text">{me?.xp ?? 0} / {me?.xpNext ?? 10} TON</div>
+        <div className="xp-text">{me?.xp?.toFixed(1) ?? 0} / {me?.xpNext ?? 10} TON</div>
       </div>
 
       <div className="action-pair">
-        <button className="big-btn primary" onClick={onTopup}>{t("topup")}</button>
+        <button className="big-btn primary" onClick={() => { haptic("medium"); setDepOpen(true) }}>{t("topup")}</button>
         <button className="big-btn ghost" onClick={onRewards}>{t("rewards")}</button>
       </div>
 
@@ -85,6 +84,7 @@ export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSetti
 
       <div className="inventory-box">{t("inventory_empty")}</div>
 
+      <DepositModal open={depOpen} onClose={() => setDepOpen(false)} />
       {toast && <div className="toast">{toast}</div>}
     </div>
   )
