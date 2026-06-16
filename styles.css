@@ -666,3 +666,82 @@ button { font-family: inherit; }
 /* Make sure SVG chart can't overlap the rocket */
 .chart { z-index: 2 !important; }
 .sky .rocket-wrap { z-index: 50 !important; }
+
+
+/* ===== v6: SVG rocket + DOM-driven animation (no React re-renders) ===== */
+
+/* Inline SVG rocket — guaranteed visible on any device, no emoji-font dependency. */
+.rocket-wrap {
+  position: absolute !important;
+  z-index: 50 !important;
+  pointer-events: none;
+  will-change: transform, opacity;
+  /* No CSS transitions — JS updates every frame, transitions would cause stutter on iOS. */
+  transition: none !important;
+  line-height: 0;
+}
+.rocket-svg {
+  display: block;
+  filter:
+    drop-shadow(0 0 10px rgba(255, 179, 71, 0.7))
+    drop-shadow(0 0 22px rgba(255, 107, 53, 0.45))
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+/* Flame element under rocket */
+.rocket-wrap .flame {
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  width: 16px;
+  border-radius: 50% 50% 40% 40% / 80% 80% 50% 50%;
+  background: linear-gradient(180deg,
+    rgba(255, 255, 220, 0.95) 0%,
+    rgba(255, 230, 109, 0.9) 25%,
+    rgba(255, 179, 71, 0.85) 55%,
+    rgba(255, 107, 53, 0.65) 80%,
+    rgba(255, 71, 87, 0) 100%);
+  filter: blur(2.5px);
+  z-index: -1;
+}
+
+/* Big running multiplier — lives center of sky, JS shows/hides + sets text. */
+.running-big {
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 72px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow:
+    0 0 24px rgba(255, 179, 71, 0.7),
+    0 0 50px rgba(255, 107, 53, 0.45),
+    0 6px 20px rgba(0, 0, 0, 0.6);
+  letter-spacing: -2px;
+  z-index: 4;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Make countdown-big not animate on every render (JS sets textContent now) —
+   remove the animation we added in v5.1 so the number stays still during the second. */
+.countdown-big { animation: none !important; }
+
+/* Stop the old big-multiplier from ever showing */
+.big-multiplier { display: none !important; }
+.countdown-wrap { display: none !important; }
+
+/* History-strip pill placeholder when hidden */
+.pill.current-pill {
+  background: linear-gradient(135deg, #36b1ff 0%, #5acbff 100%);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 0 14px rgba(54, 177, 255, 0.55);
+  min-width: 64px;
+  text-align: center;
+}
+
+/* iOS WebView perf: turn off heavy filter on stars */
+.stars, .stars-2 { will-change: auto; }
