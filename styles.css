@@ -488,49 +488,123 @@ button { font-family: inherit; }
 }
 
 
-/* ===== v5: smooth rocket, no CSS animations on transform/opacity ===== */
+/* ===== v5.1: video-style overlay ===== */
 
-/* JS controls position/rotation/scale/opacity via inline style. CSS only adds glow + flame. */
-.rocket-wrap {
+/* Big white countdown number — centered, with soft glow, pulse on each tick. */
+.countdown-big {
   position: absolute;
-  font-size: 44px;
-  z-index: 5;
-  pointer-events: none;
-  will-change: transform, opacity;
-  transition: filter 0.3s ease;
-}
-.rocket-wrap.waiting {
-  filter: drop-shadow(0 6px 14px rgba(54, 177, 255, 0.45));
-}
-.rocket-wrap.running {
-  filter:
-    drop-shadow(0 0 14px rgba(255, 179, 71, 0.85))
-    drop-shadow(0 0 30px rgba(255, 107, 53, 0.55));
-}
-.rocket-wrap.crashed {
-  filter: drop-shadow(0 0 22px rgba(255, 71, 87, 0.7));
-}
-.rocket-wrap .rocket-emoji {
-  display: inline-block;
-  line-height: 1;
-}
-.rocket-wrap .flame {
-  position: absolute;
+  top: 38%;
   left: 50%;
-  bottom: -12px;
-  transform: translateX(-50%);
-  width: 20px;
-  border-radius: 50% 50% 40% 40% / 80% 80% 50% 50%;
-  background: linear-gradient(180deg,
-    rgba(255, 255, 220, 0.95) 0%,
-    rgba(255, 230, 109, 0.95) 25%,
-    rgba(255, 179, 71, 0.9) 55%,
-    rgba(255, 107, 53, 0.7) 80%,
-    rgba(255, 71, 87, 0) 100%);
-  filter: blur(2.5px);
-  z-index: -1;
-  animation: flameFlicker 0.09s ease-in-out infinite alternate;
+  transform: translate(-50%, -50%);
+  font-size: 140px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow:
+    0 0 30px rgba(120, 200, 255, 0.7),
+    0 0 60px rgba(120, 200, 255, 0.45),
+    0 6px 20px rgba(0, 0, 0, 0.6);
+  letter-spacing: -4px;
+  z-index: 4;
+  pointer-events: none;
+  animation: countdownPulse 1s ease-out;
+  font-variant-numeric: tabular-nums;
+}
+@keyframes countdownPulse {
+  0%   { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+  20%  { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
-/* Disable the old broken animation on the legacy .rocket class to be safe. */
-.rocket.crashed { animation: none !important; }
+/* Big red crash multiplier — centered, dramatic. */
+.crash-big {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 110px;
+  font-weight: 900;
+  color: #ff3b5c;
+  text-shadow:
+    0 0 30px rgba(255, 59, 92, 0.7),
+    0 0 60px rgba(255, 59, 92, 0.4),
+    0 6px 24px rgba(0, 0, 0, 0.7);
+  letter-spacing: -3px;
+  z-index: 4;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  animation: crashPop 0.4s cubic-bezier(.2,.9,.3,1.4);
+}
+.crash-big::after {
+  content: "\d7";
+  font-size: 0.7em;
+  margin-left: 4px;
+  opacity: 0.85;
+}
+@keyframes crashPop {
+  0%   { transform: translate(-50%, -50%) scale(0.4) rotate(-8deg); opacity: 0; }
+  60%  { transform: translate(-50%, -50%) scale(1.15) rotate(2deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 1; }
+}
+
+/* History strip leading pills (current x… and Ожидание). */
+.history-strip { gap: 6px; }
+.pill.current-pill {
+  background: linear-gradient(135deg, #36b1ff 0%, #5acbff 100%);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 0 14px rgba(54, 177, 255, 0.55);
+  animation: currentBlink 0.6s ease-in-out infinite alternate;
+  min-width: 64px;
+  text-align: center;
+}
+@keyframes currentBlink {
+  0%   { box-shadow: 0 0 8px rgba(54, 177, 255, 0.35); }
+  100% { box-shadow: 0 0 18px rgba(54, 177, 255, 0.85); }
+}
+.pill.waiting-pill {
+  background: rgba(255, 255, 255, 0.12);
+  color: #cfd8e3;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  min-width: 86px;
+  text-align: center;
+}
+
+/* Planet always visible (top-right, parallax). */
+.planet-bg {
+  position: absolute;
+  top: 8%;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, #ff9d6c 0%, #c44d2e 40%, #6b2018 80%, #2a0a05 100%);
+  box-shadow:
+    inset -20px -20px 50px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(255, 107, 53, 0.25);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 1;
+  animation: planetDrift 60s linear infinite;
+}
+.planet-bg::before {
+  content: "";
+  position: absolute;
+  top: 22%;
+  left: 18%;
+  width: 30%;
+  height: 14%;
+  border-radius: 50%;
+  background: rgba(255, 200, 150, 0.25);
+  filter: blur(6px);
+}
+@keyframes planetDrift {
+  0%   { transform: translate(0, 0); }
+  50%  { transform: translate(-14px, 8px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Make sure old big-multiplier (if any cached) is hidden in favor of new ones. */
+.big-multiplier { display: none !important; }
+.countdown-wrap { display: none !important; }

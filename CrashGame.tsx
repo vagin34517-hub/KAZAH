@@ -7,10 +7,10 @@ type Phase = "waiting" | "running" | "crashed"
 
 const WS_URL = deriveWsUrl()
 const SKIN_EMOJI: Record<string, string> = {
-  rocket: "🚀", ufo: "🛸", plane: "✈️", helicopter: "🚁",
-  satellite: "🛰️", meteor: "☄️", alien: "👽", fire: "🔥", star: "⭐",
+  rocket: "\uD83D\uDE80", ufo: "\uD83D\uDEF8", plane: "\u2708\uFE0F", helicopter: "\uD83D\uDE81",
+  satellite: "\uD83D\uDEF0\uFE0F", meteor: "\u2604\uFE0F", alien: "\uD83D\uDC7D", fire: "\uD83D\uDD25", star: "\u2B50",
 }
-const GROWTH = 0.075 // same as server
+const GROWTH = 0.075
 const MAX_MULT = 5000
 
 function pillColor(x: number) {
@@ -38,28 +38,21 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
   const [players, setPlayers] = useState<Player[]>([])
   const [message, setMessage] = useState("")
   const [now, setNow] = useState(Date.now())
-
   const phaseRef = useRef(phase)
   phaseRef.current = phase
 
-  // RAF loop — keeps clock + animations smooth at display refresh rate.
   useEffect(() => {
     let raf = 0
-    const loop = () => {
-      setNow(Date.now())
-      raf = requestAnimationFrame(loop)
-    }
+    const loop = () => { setNow(Date.now()); raf = requestAnimationFrame(loop) }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  // Initial fetch.
   useEffect(() => {
     api.history().then((r) => setHistory(r.items)).catch(() => {})
     api.players().then((r) => setPlayers(r.players)).catch(() => {})
   }, [])
 
-  // WS + polling fallback. Server only pushes phase transitions; multiplier is local.
   useEffect(() => {
     let ws: WebSocket | null = null
     let reconnect: any = null
@@ -74,18 +67,13 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
         if (msg.crashPoint) setCrashPoint(msg.crashPoint)
         if (msg.startedAt) setStartedAt(msg.startedAt)
         if (phaseRef.current !== "crashed") {
-          setPhase("crashed")
-          setBetId(null)
-          haptic("error")
+          setPhase("crashed"); setBetId(null); haptic("error")
           api.history().then((r) => setHistory(r.items)).catch(() => {})
         }
       } else if (msg.type === "waiting") {
         if (msg.waitingEndsAt) setWaitingEndsAt(msg.waitingEndsAt)
         if (phaseRef.current !== "waiting") {
-          setPhase("waiting")
-          setBetId(null)
-          setStartedAt(0)
-          setCrashPoint(0)
+          setPhase("waiting"); setBetId(null); setStartedAt(0); setCrashPoint(0)
           api.players().then((r) => setPlayers(r.players)).catch(() => {})
         }
       } else if (msg.type === "players") {
@@ -129,7 +117,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     if (phase === "waiting" && !betId) {
       try {
         const r = await api.placeBet(bet)
-        setBetId(r.betId); setMessage(`${t("bet_accepted")} · ${bet} TON`)
+        setBetId(r.betId); setMessage(`${t("bet_accepted")} \u00B7 ${bet} TON`)
       } catch (e: any) { setMessage(e.message || t("bet_error")); haptic("error") }
     } else if (phase === "running" && betId) {
       try {
@@ -140,35 +128,27 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     }
   }
 
-  // Local multiplier — buttery smooth, never desyncs.
   let m = 1
   if (phase === "running" && startedAt) {
     m = computeMult(startedAt, now)
-    if (crashPoint && m >= crashPoint) m = crashPoint // safety clamp
+    if (crashPoint && m >= crashPoint) m = crashPoint
   } else if (phase === "crashed") {
     m = crashPoint || 1
   }
 
-  // Countdown.
   const msLeft = Math.max(0, waitingEndsAt - now)
   const secLeft = Math.ceil(msLeft / 1000)
-  const countdownProgress = Math.max(0, Math.min(1, msLeft / 10000))
 
-  // Rocket positioning — always visible.
   const progress = Math.min(1, Math.log(Math.max(1, m)) / Math.log(20))
   const tAnim = now / 1000
-
   let rocketX: number, rocketY: number, rotation: number, rocketScale: number, rocketOpacity: number
   if (phase === "waiting") {
-    // Idle on launch pad bottom-left, slight wobble.
     rocketX = 14 + Math.sin(tAnim * 1.8) * 0.7
     rocketY = 76 + Math.cos(tAnim * 2.2) * 1.4
     rotation = -28 + Math.sin(tAnim * 1.4) * 4
-    rocketScale = 1
-    rocketOpacity = 1
+    rocketScale = 1; rocketOpacity = 1
   } else if (phase === "crashed") {
-    // Fly off-screen after crash for ~1s, then fade.
-    const crashAge = startedAt ? Math.max(0, (now - startedAt) / 1000 - Math.log(crashPoint) / GROWTH) : 0
+    const crashAge = startedAt ? Math.max(0, (now - startedAt) / 1000 - Math.log(Math.max(1, crashPoint)) / GROWTH) : 0
     const k = Math.min(1, crashAge / 1.2)
     rocketX = 8 + progress * 78 + k * 40
     rocketY = 88 - progress * 70 - k * 60
@@ -183,7 +163,6 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     rocketOpacity = 1
   }
 
-  // Trajectory path.
   function buildPath() {
     if (progress <= 0.005) return ""
     const pts: string[] = []
@@ -198,19 +177,13 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
   }
   const path = buildPath()
 
-  // Live tape on the left — 6 values cascading from current multiplier.
-  const tape: number[] = []
-  if (phase === "running") {
-    for (let i = 0; i < 6; i++) tape.push(Math.max(1, m * (1 - i * 0.08)))
-  }
-
   const buttonLabel =
     betId && phase === "running"
       ? `${t("cashout")} ${(bet * m).toFixed(2)} TON`
       : phase === "waiting" && betId
-        ? `✓ ${bet} TON · ${secLeft}s`
+        ? `\u2713 ${bet} TON \u00B7 ${secLeft}s`
         : phase === "waiting"
-          ? `${t("place_bet")} · ${secLeft}s`
+          ? `${t("place_bet")} \u00B7 ${secLeft}s`
           : t("place_bet")
 
   return (
@@ -218,7 +191,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
       <div className={`sky bg-${bg}`}>
         <div className="stars" />
         <div className="stars stars-2" />
-        {bg === "planet" && <div className="planet-bg" />}
+        <div className="planet-bg" />
 
         <svg className="chart" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
@@ -231,10 +204,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
               <stop offset="0%" stopColor="#ff6b35" stopOpacity="0.3" />
               <stop offset="100%" stopColor="#ff6b35" stopOpacity="0" />
             </linearGradient>
-            <filter id="trailGlow">
-              <feGaussianBlur stdDeviation="0.6" />
-              <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
+            <filter id="trailGlow"><feGaussianBlur stdDeviation="0.6" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
           </defs>
           {path && (
             <>
@@ -244,34 +214,11 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
           )}
         </svg>
 
-        {(phase === "running" || phase === "crashed") && (
-          <div className={`big-multiplier ${phase}`}>{m.toFixed(2)}×</div>
-        )}
-
         {phase === "waiting" && (
-          <div className="countdown-wrap">
-            <svg className="countdown-ring" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="52" className="ring-bg" />
-              <circle
-                cx="60" cy="60" r="52"
-                className="ring-fg"
-                strokeDasharray={2 * Math.PI * 52}
-                strokeDashoffset={(1 - countdownProgress) * 2 * Math.PI * 52}
-              />
-            </svg>
-            <div className="countdown-num">{secLeft}</div>
-            <div className="countdown-label">{t("waiting")}</div>
-          </div>
+          <div className="countdown-big" key={secLeft}>{secLeft}</div>
         )}
-
-        {phase === "running" && (
-          <div className="live-tape">
-            {tape.map((v, i) => (
-              <div key={i} className="tape-num" style={{ opacity: 1 - i * 0.14, fontSize: `${22 - i * 1.6}px` }}>
-                {v.toFixed(2)}×
-              </div>
-            ))}
-          </div>
+        {phase === "crashed" && (
+          <div className="crash-big">{m.toFixed(2)}</div>
         )}
 
         <div
@@ -286,13 +233,17 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
           {phase === "running" && (
             <div className="flame" style={{ height: `${22 + Math.sin(tAnim * 28) * 8}px` }} />
           )}
-          <span className="rocket-emoji">{SKIN_EMOJI[skin] || "🚀"}</span>
+          <span className="rocket-emoji">{SKIN_EMOJI[skin] || "\uD83D\uDE80"}</span>
         </div>
-
-        {phase === "crashed" && <div className="crash-overlay">💥 {t("crashed").toUpperCase()}</div>}
       </div>
 
       <div className="history-strip">
+        {phase === "running" && (
+          <div className="pill current-pill">{"\u00D7" + m.toFixed(2)}</div>
+        )}
+        {phase === "waiting" && (
+          <div className="pill waiting-pill">{t("waiting")}</div>
+        )}
         {history.slice(0, 12).map((h, i) => (
           <div key={h.roundId + i} className={`pill ${pillColor(h.crashPoint)}`}>{h.crashPoint.toFixed(2)}</div>
         ))}
@@ -300,7 +251,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
 
       <div className="bet-controls">
         <div className="bet-row">
-          <button className="bet-step" onClick={() => { haptic("light"); setBet((b) => Math.max(0.1, +(b - 0.5).toFixed(2))) }} disabled={!!betId}>−</button>
+          <button className="bet-step" onClick={() => { haptic("light"); setBet((b) => Math.max(0.1, +(b - 0.5).toFixed(2))) }} disabled={!!betId}>{"\u2212"}</button>
           <input type="number" min={0.1} step={0.1} value={bet} disabled={!!betId} onChange={(e) => setBet(Number(e.target.value))} />
           <button className="bet-step" onClick={() => { haptic("light"); setBet((b) => +(b + 0.5).toFixed(2)) }} disabled={!!betId}>+</button>
         </div>
@@ -319,15 +270,12 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
             <div className="avatar">{(p.name || "?").slice(0, 1).toUpperCase()}</div>
             <div className="player-info">
               <div className="player-name">{p.name}</div>
-              <div className="player-bet">
-                💎 {p.bet.toFixed(2)}
-                {p.multiplier ? <span className="x"> ×{p.multiplier.toFixed(2)}</span> : null}
-              </div>
+              <div className="player-bet">{"\uD83D\uDC8E " + p.bet.toFixed(2)}{p.multiplier ? <span className="x">{" \u00D7" + p.multiplier.toFixed(2)}</span> : null}</div>
             </div>
             <div className="player-result">
-              {p.status === "cashed" && p.payout != null && <span className="win-tag">💎 {p.payout.toFixed(2)}</span>}
-              {p.status === "lost" && <span className="lost-tag">—</span>}
-              {p.status === "playing" && <span className="playing-tag">🔴</span>}
+              {p.status === "cashed" && p.payout != null && <span className="win-tag">{"\uD83D\uDC8E " + p.payout.toFixed(2)}</span>}
+              {p.status === "lost" && <span className="lost-tag">{"\u2014"}</span>}
+              {p.status === "playing" && <span className="playing-tag">{"\uD83D\uDD34"}</span>}
             </div>
           </div>
         ))}
