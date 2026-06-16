@@ -486,3 +486,51 @@ button { font-family: inherit; }
   60% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
   100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
+
+
+/* ===== v5: smooth rocket, no CSS animations on transform/opacity ===== */
+
+/* JS controls position/rotation/scale/opacity via inline style. CSS only adds glow + flame. */
+.rocket-wrap {
+  position: absolute;
+  font-size: 44px;
+  z-index: 5;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition: filter 0.3s ease;
+}
+.rocket-wrap.waiting {
+  filter: drop-shadow(0 6px 14px rgba(54, 177, 255, 0.45));
+}
+.rocket-wrap.running {
+  filter:
+    drop-shadow(0 0 14px rgba(255, 179, 71, 0.85))
+    drop-shadow(0 0 30px rgba(255, 107, 53, 0.55));
+}
+.rocket-wrap.crashed {
+  filter: drop-shadow(0 0 22px rgba(255, 71, 87, 0.7));
+}
+.rocket-wrap .rocket-emoji {
+  display: inline-block;
+  line-height: 1;
+}
+.rocket-wrap .flame {
+  position: absolute;
+  left: 50%;
+  bottom: -12px;
+  transform: translateX(-50%);
+  width: 20px;
+  border-radius: 50% 50% 40% 40% / 80% 80% 50% 50%;
+  background: linear-gradient(180deg,
+    rgba(255, 255, 220, 0.95) 0%,
+    rgba(255, 230, 109, 0.95) 25%,
+    rgba(255, 179, 71, 0.9) 55%,
+    rgba(255, 107, 53, 0.7) 80%,
+    rgba(255, 71, 87, 0) 100%);
+  filter: blur(2.5px);
+  z-index: -1;
+  animation: flameFlicker 0.09s ease-in-out infinite alternate;
+}
+
+/* Disable the old broken animation on the legacy .rocket class to be safe. */
+.rocket.crashed { animation: none !important; }

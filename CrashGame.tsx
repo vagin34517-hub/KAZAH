@@ -10,6 +10,8 @@ const SKIN_EMOJI: Record<string, string> = {
   rocket: "🚀", ufo: "🛸", plane: "✈️", helicopter: "🚁",
   satellite: "🛰️", meteor: "☄️", alien: "👽", fire: "🔥", star: "⭐",
 }
+const GROWTH = 0.075 // same as server
+const MAX_MULT = 5000
 
 function pillColor(x: number) {
   if (x < 1.5) return "blue"
@@ -19,27 +21,31 @@ function pillColor(x: number) {
   return "purple"
 }
 
+function computeMult(startedAt: number, nowMs: number) {
+  const elapsed = Math.max(0, (nowMs - startedAt) / 1000)
+  return Math.min(MAX_MULT, Math.exp(GROWTH * elapsed))
+}
+
 export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
   const { t } = useT()
   const [phase, setPhase] = useState<Phase>("waiting")
-  const [multiplier, setMultiplier] = useState(1.0)
+  const [startedAt, setStartedAt] = useState(0)
+  const [crashPoint, setCrashPoint] = useState(0)
+  const [waitingEndsAt, setWaitingEndsAt] = useState(Date.now() + 10000)
   const [bet, setBet] = useState(1)
   const [betId, setBetId] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [players, setPlayers] = useState<Player[]>([])
   const [message, setMessage] = useState("")
-  const [waitingEndsAt, setWaitingEndsAt] = useState<number>(Date.now() + 10000)
   const [now, setNow] = useState(Date.now())
-  const [floatT, setFloatT] = useState(0)
-  const phaseRef = useRef<Phase>("waiting")
-  useEffect(() => { phaseRef.current = phase }, [phase])
 
-  // Continuous animation tick: bobbing + countdown updates at 60fps.
+  const phaseRef = useRef(phase)
+  phaseRef.current = phase
+
+  // RAF loop — keeps clock + animations smooth at display refresh rate.
   useEffect(() => {
     let raf = 0
-    const start = performance.now()
-    const loop = (n: number) => {
-      setFloatT((n - start) / 1000)
+    const loop = () => {
       setNow(Date.now())
       raf = requestAnimationFrame(loop)
     }
@@ -47,44 +53,60 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     return () => cancelAnimationFrame(raf)
   }, [])
 
+  // Initial fetch.
   useEffect(() => {
     api.history().then((r) => setHistory(r.items)).catch(() => {})
     api.players().then((r) => setPlayers(r.players)).catch(() => {})
   }, [])
 
-  // WS connect with polling fallback. Rocket always animates.
+  // WS + polling fallback. Server only pushes phase transitions; multiplier is local.
   useEffect(() => {
     let ws: WebSocket | null = null
     let reconnect: any = null
     let pollTimer: any = null
     let wsAlive = false
-    let lastPhase: Phase = "waiting"
 
-    function applyState(s: any) {
-      if (s.phase !== lastPhase) {
-        if (s.phase === "crashed") haptic("error")
-        if (s.phase === "waiting") setBetId(null)
-        lastPhase = s.phase
-        if (s.phase === "waiting" || s.phase === "crashed") {
+    function applyMsg(msg: any) {
+      if (msg.type === "running") {
+        if (msg.startedAt) setStartedAt(msg.startedAt)
+        if (phaseRef.current !== "running") { setPhase("running"); haptic("light") }
+      } else if (msg.type === "crash") {
+        if (msg.crashPoint) setCrashPoint(msg.crashPoint)
+        if (msg.startedAt) setStartedAt(msg.startedAt)
+        if (phaseRef.current !== "crashed") {
+          setPhase("crashed")
+          setBetId(null)
+          haptic("error")
           api.history().then((r) => setHistory(r.items)).catch(() => {})
         }
+      } else if (msg.type === "waiting") {
+        if (msg.waitingEndsAt) setWaitingEndsAt(msg.waitingEndsAt)
+        if (phaseRef.current !== "waiting") {
+          setPhase("waiting")
+          setBetId(null)
+          setStartedAt(0)
+          setCrashPoint(0)
+          api.players().then((r) => setPlayers(r.players)).catch(() => {})
+        }
+      } else if (msg.type === "players") {
+        setPlayers(msg.players)
       }
-      setPhase(s.phase)
-      setMultiplier(s.phase === "crashed" && s.crashPoint ? s.crashPoint : s.multiplier)
-      if (s.waitingEndsAt) setWaitingEndsAt(s.waitingEndsAt)
+    }
+
+    function applyState(s: any) {
+      if (s.phase === "running") applyMsg({ type: "running", startedAt: s.startedAt })
+      else if (s.phase === "crashed") applyMsg({ type: "crash", crashPoint: s.crashPoint, startedAt: s.startedAt })
+      else if (s.phase === "waiting") applyMsg({ type: "waiting", waitingEndsAt: s.waitingEndsAt })
       if (s.players) setPlayers(s.players)
     }
 
     function startPolling() {
       if (pollTimer) return
-      const tick = () => {
+      const poll = () => {
         if (wsAlive) { pollTimer = null; return }
-        api.state()
-          .then((s) => applyState(s as any))
-          .catch(() => {})
-          .finally(() => { pollTimer = setTimeout(tick, 350) })
+        api.state().then(applyState).catch(() => {}).finally(() => { pollTimer = setTimeout(poll, 800) })
       }
-      tick()
+      poll()
     }
 
     function connect() {
@@ -92,36 +114,14 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
       try {
         ws = new WebSocket(WS_URL)
         ws.onopen = () => { wsAlive = true; if (pollTimer) { clearTimeout(pollTimer); pollTimer = null } }
-        ws.onmessage = (e) => {
-          const msg = JSON.parse(e.data)
-          if (msg.type === "tick") { setPhase("running"); setMultiplier(msg.multiplier); lastPhase = "running" }
-          else if (msg.type === "running") { setPhase("running"); if (msg.multiplier) setMultiplier(msg.multiplier); lastPhase = "running" }
-          else if (msg.type === "crash") {
-            setPhase("crashed"); setMultiplier(msg.crashPoint); setBetId(null); haptic("error"); lastPhase = "crashed"
-            api.history().then((r) => setHistory(r.items)).catch(() => {})
-            api.players().then((r) => setPlayers(r.players)).catch(() => {})
-          }
-          else if (msg.type === "waiting") {
-            setPhase("waiting"); setMultiplier(1.0); setBetId(null); lastPhase = "waiting"
-            if (msg.waitingEndsAt) setWaitingEndsAt(msg.waitingEndsAt)
-            api.players().then((r) => setPlayers(r.players)).catch(() => {})
-          }
-          else if (msg.type === "players") setPlayers(msg.players)
-        }
-        ws.onclose = () => {
-          wsAlive = false
-          startPolling()
-          reconnect = setTimeout(connect, 3000)
-        }
+        ws.onmessage = (e) => { try { applyMsg(JSON.parse(e.data)) } catch {} }
+        ws.onclose = () => { wsAlive = false; startPolling(); reconnect = setTimeout(connect, 2500) }
         ws.onerror = () => { wsAlive = false; startPolling() }
       } catch { startPolling() }
     }
     connect()
     const guard = setTimeout(() => { if (!wsAlive) startPolling() }, 1500)
-    return () => {
-      clearTimeout(reconnect); clearTimeout(pollTimer); clearTimeout(guard)
-      try { ws?.close() } catch {}
-    }
+    return () => { clearTimeout(reconnect); clearTimeout(pollTimer); clearTimeout(guard); try { ws?.close() } catch {} }
   }, [])
 
   async function onMainAction() {
@@ -140,34 +140,52 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     }
   }
 
-  // Countdown
+  // Local multiplier — buttery smooth, never desyncs.
+  let m = 1
+  if (phase === "running" && startedAt) {
+    m = computeMult(startedAt, now)
+    if (crashPoint && m >= crashPoint) m = crashPoint // safety clamp
+  } else if (phase === "crashed") {
+    m = crashPoint || 1
+  }
+
+  // Countdown.
   const msLeft = Math.max(0, waitingEndsAt - now)
   const secLeft = Math.ceil(msLeft / 1000)
   const countdownProgress = Math.max(0, Math.min(1, msLeft / 10000))
 
-  // Rocket position along curve.
-  const m = multiplier
+  // Rocket positioning — always visible.
   const progress = Math.min(1, Math.log(Math.max(1, m)) / Math.log(20))
-  // During waiting: rocket sits at launch pad (bottom-left), wobbling.
-  // During running: rocket flies along arc.
-  // During crashed: rocket flies off-screen up-right.
-  let rocketX: number, rocketY: number, rotation: number
+  const tAnim = now / 1000
+
+  let rocketX: number, rocketY: number, rotation: number, rocketScale: number, rocketOpacity: number
   if (phase === "waiting") {
-    rocketX = 12 + Math.sin(floatT * 2) * 0.6
-    rocketY = 80 + Math.cos(floatT * 2.4) * 0.8
-    rotation = -30
+    // Idle on launch pad bottom-left, slight wobble.
+    rocketX = 14 + Math.sin(tAnim * 1.8) * 0.7
+    rocketY = 76 + Math.cos(tAnim * 2.2) * 1.4
+    rotation = -28 + Math.sin(tAnim * 1.4) * 4
+    rocketScale = 1
+    rocketOpacity = 1
   } else if (phase === "crashed") {
-    rocketX = 8 + progress * 78
-    rocketY = 88 - progress * 70
-    rotation = 90
+    // Fly off-screen after crash for ~1s, then fade.
+    const crashAge = startedAt ? Math.max(0, (now - startedAt) / 1000 - Math.log(crashPoint) / GROWTH) : 0
+    const k = Math.min(1, crashAge / 1.2)
+    rocketX = 8 + progress * 78 + k * 40
+    rocketY = 88 - progress * 70 - k * 60
+    rotation = 60 + k * 40
+    rocketScale = 1 - k * 0.5
+    rocketOpacity = Math.max(0, 1 - k * 1.3)
   } else {
-    rocketX = 8 + progress * 78 + Math.sin(floatT * 6) * 0.7
-    rocketY = 88 - progress * 70 + Math.cos(floatT * 7) * 0.7
+    rocketX = 8 + progress * 78 + Math.sin(tAnim * 8) * 0.4
+    rocketY = 88 - progress * 70 + Math.cos(tAnim * 10) * 0.5
     rotation = -42 - progress * 8
+    rocketScale = 1 + progress * 0.18
+    rocketOpacity = 1
   }
 
-  // Trajectory curve.
+  // Trajectory path.
   function buildPath() {
+    if (progress <= 0.005) return ""
     const pts: string[] = []
     const steps = 40
     for (let i = 0; i <= steps; i++) {
@@ -178,23 +196,22 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     }
     return pts.join(" ")
   }
+  const path = buildPath()
 
-  // Live ticker on the left: synthesize values up to current multiplier.
-  // Shows a vertical column of recent fractions (always changing during run).
-  const tickerValues: number[] = []
+  // Live tape on the left — 6 values cascading from current multiplier.
+  const tape: number[] = []
   if (phase === "running") {
-    for (let i = 0; i < 7; i++) {
-      const factor = 1 - i * 0.08
-      tickerValues.push(Math.max(1, m * factor))
-    }
+    for (let i = 0; i < 6; i++) tape.push(Math.max(1, m * (1 - i * 0.08)))
   }
 
   const buttonLabel =
     betId && phase === "running"
-      ? `${t("cashout")} ${(bet * multiplier).toFixed(2)} TON`
-      : phase === "waiting"
-        ? `${t("place_bet")} · ${secLeft}s`
-        : t("place_bet")
+      ? `${t("cashout")} ${(bet * m).toFixed(2)} TON`
+      : phase === "waiting" && betId
+        ? `✓ ${bet} TON · ${secLeft}s`
+        : phase === "waiting"
+          ? `${t("place_bet")} · ${secLeft}s`
+          : t("place_bet")
 
   return (
     <div className="crash-screen">
@@ -203,39 +220,34 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
         <div className="stars stars-2" />
         {bg === "planet" && <div className="planet-bg" />}
 
-        {/* Curve + filled area during running/crashed */}
         <svg className="chart" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
             <linearGradient id="trail" x1="0" y1="100%" x2="100%" y2="0">
-              <stop offset="0%" stopColor="#ff6b35" stopOpacity="0.3" />
-              <stop offset="40%" stopColor="#ffb347" stopOpacity="0.9" />
+              <stop offset="0%" stopColor="#ff6b35" stopOpacity="0.2" />
+              <stop offset="60%" stopColor="#ffb347" stopOpacity="0.85" />
               <stop offset="100%" stopColor="#ffe66d" stopOpacity="1" />
             </linearGradient>
             <linearGradient id="fill" x1="0" y1="0" x2="0" y2="100%">
-              <stop offset="0%" stopColor="#ff6b35" stopOpacity="0.35" />
+              <stop offset="0%" stopColor="#ff6b35" stopOpacity="0.3" />
               <stop offset="100%" stopColor="#ff6b35" stopOpacity="0" />
             </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="0.8" result="b" />
-              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+            <filter id="trailGlow">
+              <feGaussianBlur stdDeviation="0.6" />
+              <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
-          {phase !== "waiting" && (
+          {path && (
             <>
-              <path d={`${buildPath()} L${rocketX.toFixed(2)},88 L8,88 Z`} fill="url(#fill)" />
-              <path d={buildPath()} fill="none" stroke="url(#trail)" strokeWidth="1.6" strokeLinecap="round" filter="url(#glow)" />
+              <path d={`${path} L${rocketX.toFixed(2)},88 L8,88 Z`} fill="url(#fill)" />
+              <path d={path} fill="none" stroke="url(#trail)" strokeWidth="1.5" strokeLinecap="round" filter="url(#trailGlow)" />
             </>
           )}
         </svg>
 
-        {/* Big center multiplier */}
-        <div className={`big-multiplier ${phase}`}>
-          {phase === "waiting"
-            ? ""
-            : m.toFixed(2) + (phase === "crashed" ? "×" : "×")}
-        </div>
+        {(phase === "running" || phase === "crashed") && (
+          <div className={`big-multiplier ${phase}`}>{m.toFixed(2)}×</div>
+        )}
 
-        {/* Countdown ring during waiting */}
         {phase === "waiting" && (
           <div className="countdown-wrap">
             <svg className="countdown-ring" viewBox="0 0 120 120">
@@ -252,32 +264,27 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
           </div>
         )}
 
-        {/* Live ticker on the left */}
         {phase === "running" && (
           <div className="live-tape">
-            {tickerValues.map((v, i) => (
-              <div
-                key={i}
-                className="tape-num"
-                style={{ opacity: 1 - i * 0.13, fontSize: `${18 - i * 1.4}px` }}
-              >
+            {tape.map((v, i) => (
+              <div key={i} className="tape-num" style={{ opacity: 1 - i * 0.14, fontSize: `${22 - i * 1.6}px` }}>
                 {v.toFixed(2)}×
               </div>
             ))}
           </div>
         )}
 
-        {/* Rocket with flame trail */}
         <div
-          className={`rocket ${phase}`}
+          className={`rocket-wrap ${phase}`}
           style={{
             left: `${rocketX}%`,
             top: `${rocketY}%`,
-            transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+            transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${rocketScale})`,
+            opacity: rocketOpacity,
           }}
         >
           {phase === "running" && (
-            <div className="flame" style={{ height: `${20 + Math.sin(floatT * 30) * 6}px` }} />
+            <div className="flame" style={{ height: `${22 + Math.sin(tAnim * 28) * 8}px` }} />
           )}
           <span className="rocket-emoji">{SKIN_EMOJI[skin] || "🚀"}</span>
         </div>
@@ -300,7 +307,7 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
         <button
           className={`main-action ${phase === "running" && betId ? "cashout" : ""}`}
           onClick={onMainAction}
-          disabled={(phase === "waiting" && !!betId) || (phase === "crashed") || (phase === "running" && !betId)}
+          disabled={(phase === "waiting" && !!betId) || phase === "crashed" || (phase === "running" && !betId)}
         >{buttonLabel}</button>
         {message && <div className="message">{message}</div>}
       </div>
