@@ -1,52 +1,73 @@
 import { useEffect, useState } from "react"
-import { initTelegram, getUser } from "./telegram"
+import { initTelegram, getUser, haptic } from "./telegram"
 import { api, type MeInfo } from "./api"
 import { CrashGame } from "./CrashGame"
 import { BottomNav } from "./BottomNav"
+import { Settings, loadSkin, loadBg, loadVib } from "./Settings"
+import { Profile } from "./Profile"
+import { Cases } from "./Cases"
+import { Season } from "./Season"
+import { useT } from "./i18n"
 import "./styles.css"
 
 export default function App() {
   const [me, setMe] = useState<MeInfo | null>(null)
   const [tab, setTab] = useState("crash")
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [skin, setSkin] = useState(loadSkin())
+  const [bg, setBg] = useState(loadBg())
+  const [vib, setVib] = useState(loadVib())
+  const [toast, setToast] = useState("")
   const tgUser = getUser()
+  const { t } = useT()
 
   useEffect(() => {
     initTelegram()
-    api.me().then(setMe).catch(() => setMe({ userId: 0, name: tgUser?.first_name ?? "игрок", balance: 0, online: 0 }))
-    const t = setInterval(() => api.me().then(setMe).catch(() => {}), 5000)
-    return () => clearInterval(t)
+    const fallback: MeInfo = {
+      userId: tgUser?.id ?? 0,
+      name: tgUser?.first_name ?? "Игрок",
+      balance: 0, online: 0, level: 1, xp: 0, xpNext: 10,
+      refs: 0, refBalance: 0, inviteUrl: "",
+    }
+    api.me().then(setMe).catch(() => setMe(fallback))
+    const i = setInterval(() => api.me().then(setMe).catch(() => {}), 5000)
+    return () => clearInterval(i)
   }, [])
 
+  function onTopup() {
+    haptic("medium")
+    setToast(t("topup_soon"))
+    setTimeout(() => setToast(""), 2200)
+  }
+
   return (
-    <div className="app">
+    <div className={`app theme-${bg}`}>
       <header className="top-bar">
-        <div className="online">
-          <span className="online-dot">👤</span>
-          <span>{me?.online ?? 0}</span>
-        </div>
-        <button className="settings-btn">⚙️</button>
-        <div className="balance-chip">
+        <div className="online"><span>👤</span><span>{me?.online ?? 0}</span></div>
+        <button className="icon-btn" onClick={() => { haptic("light"); setSettingsOpen(true) }}>⚙️</button>
+        <div className="balance-chip" onClick={onTopup}>
           <span className="ton-icon">💎</span>
           <span>{(me?.balance ?? 0).toFixed(2)}</span>
-          <button className="plus-btn">+</button>
+          <button className="plus-btn" onClick={(e) => { e.stopPropagation(); onTopup() }}>+</button>
         </div>
       </header>
 
       <main className="main-content">
-        {tab === "crash" && <CrashGame />}
-        {tab === "cases" && <div className="placeholder">🎁 Кейсы — скоро</div>}
-        {tab === "season" && <div className="placeholder">🏆 Сезон — скоро</div>}
-        {tab === "profile" && (
-          <div className="placeholder profile-box">
-            <div className="big-avatar">{(me?.name || tgUser?.first_name || "?").slice(0, 1)}</div>
-            <div className="profile-name">{me?.name || tgUser?.first_name || "Игрок"}</div>
-            <div className="profile-id">ID: {me?.userId || tgUser?.id || "—"}</div>
-            <div className="profile-balance">Баланс: 💎 {(me?.balance ?? 0).toFixed(2)} TON</div>
-          </div>
-        )}
+        {tab === "crash" && <CrashGame skin={skin} bg={bg} />}
+        {tab === "cases" && <Cases />}
+        {tab === "season" && <Season level={me?.level ?? 1} />}
+        {tab === "profile" && <Profile me={me} onOpenSettings={() => setSettingsOpen(true)} />}
       </main>
 
       <BottomNav active={tab} onChange={setTab} />
+
+      <Settings
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onChange={(s) => { setSkin(s.skin); setBg(s.bg); setVib(s.vib) }}
+      />
+
+      {toast && <div className="toast top">{toast}</div>}
     </div>
   )
 }

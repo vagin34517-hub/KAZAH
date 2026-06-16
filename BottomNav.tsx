@@ -1,23 +1,25 @@
-import { useState } from "react"
+import { useT } from "./i18n"
+import { haptic } from "./telegram"
 
 const tabs = [
-  { id: "crash", label: "Краш", icon: "🚀" },
-  { id: "cases", label: "Кейсы", icon: "🎁" },
-  { id: "season", label: "Сезон", icon: "🏆" },
-  { id: "profile", label: "Профиль", icon: "👤" },
+  { id: "crash", icon: "🚀" },
+  { id: "cases", icon: "🎁" },
+  { id: "season", icon: "🏆" },
+  { id: "profile", icon: "👤" },
 ]
 
 export function BottomNav({ active, onChange }: { active: string; onChange: (id: string) => void }) {
+  const { t } = useT()
   return (
     <nav className="bottom-nav">
-      {tabs.map((t) => (
+      {tabs.map((tab) => (
         <button
-          key={t.id}
-          className={`nav-btn ${active === t.id ? "active" : ""}`}
-          onClick={() => onChange(t.id)}
+          key={tab.id}
+          className={`nav-btn ${active === tab.id ? "active" : ""}`}
+          onClick={() => { haptic("light"); onChange(tab.id) }}
         >
-          <span className="nav-icon">{t.icon}</span>
-          <span className="nav-label">{t.label}</span>
+          <span className="nav-icon">{tab.icon}</span>
+          <span className="nav-label">{t(tab.id)}</span>
         </button>
       ))}
     </nav>
