@@ -1,22 +1,73 @@
-import { getInitData } from "./telegram"
+import { useEffect, useRef, useState } from "react"
+import { api } from "./api"
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "https://api.example.com"
+type Phase = "waiting" | "running" | "crashed"
 
-async function request<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: body ? "POST" : "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Telegram-Init-Data": getInitData(),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  })
-  if (!res.ok) throw new Error(`API ${path} failed: ${res.status}`)
-  return res.json() as Promise<T>
-}
+const WS_URL = (import.meta as any).env?.VITE_WS_URL ?? "wss://api.example.com/ws"
 
-export const api = {
-  getBalance: () => request<{ balance: number }>("/me/balance"),
-  placeBet: (amount: number) => request<{ betId: string }>("/game/bet", { amount }),
-  cashout: (betId: string) => request<{ payout: number }>("/game/cashout", { betId }),
+export function CrashGame() {
+  const [phase, setPhase] = useState<Phase>("waiting")
+  const [multiplier, setMultiplier] = useState(1.0)
+  const [bet, setBet] = useState(1)
+  const [betId, setBetId] = useState<string | null>(null)
+  const [message, setMessage] = useState("")
+  const wsRef = useRef<WebSocket | null>(null)
+
+  useEffect(() => {
+    let ws: WebSocket | null = null
+    try {
+      ws = new WebSocket(WS_URL)
+      wsRef.current = ws
+      ws.onmessage = (e) => {
+        const msg = JSON.parse(e.data)
+        if (msg.type === "tick") { setPhase("running"); setMultiplier(msg.multiplier) }
+        else if (msg.type === "crash") { setPhase("crashed"); setMultiplier(msg.crashPoint); setBetId(null) }
+        else if (msg.type === "waiting") { setPhase("waiting"); setMultiplier(1.0) }
+      }
+    } catch {}
+    return () => { try { ws?.close() } catch {} }
+  }, [])
+
+  async function onBet() {
+    try {
+      const { betId } = await api.placeBet(bet)
+      setBetId(betId)
+      setMessage(`Ставка ${bet} TON принята`)
+    } catch { setMessage("Ошибка ставки (нет бэкенда)") }
+  }
+
+  async function onCashout() {
+    if (!betId) return
+    try {
+      const { payout } = await api.cashout(betId)
+      setMessage(`Выведено: ${payout} TON`)
+      setBetId(null)
+    } catch { setMessage("Не успел вывести") }
+  }
+
+  return (
+    <div className="crash">
+      <div className={`multiplier ${phase}`}>{multiplier.toFixed(2)}x</div>
+      <div className="status">
+        {phase === "waiting" && "Ожидание раунда..."}
+        {phase === "running" && "Летим 🚀"}
+        {phase === "crashed" && "Краш 💥"}
+      </div>
+      <div className="controls">
+        <input
+          type="number"
+          min={0.1}
+          step={0.1}
+          value={bet}
+          onChange={(e) => setBet(Number(e.target.value))}
+        />
+        {!betId ? (
+          <button disabled={phase !== "waiting"} onClick={onBet}>Ставка</button>
+        ) : (
+          <button disabled={phase !== "running"} onClick={onCashout}>Забрать</button>
+        )}
+      </div>
+      {message && <div className="message">{message}</div>}
+    </div>
+  )
 }

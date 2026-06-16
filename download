@@ -1,16 +1,5 @@
-:root { color-scheme: dark; }
-body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #0e0f13; color: #fff; }
-.app { max-width: 480px; margin: 0 auto; padding: 16px; }
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.hello { font-size: 14px; opacity: 0.7; }
-.balance { font-size: 18px; font-weight: 600; }
-.crash { text-align: center; padding: 24px; background: #15171e; border-radius: 16px; }
-.multiplier { font-size: 64px; font-weight: 800; transition: color 0.1s; }
-.multiplier.running { color: #28c76f; }
-.multiplier.crashed { color: #ea5455; }
-.status { margin: 8px 0 24px; opacity: 0.8; }
-.controls { display: flex; gap: 8px; justify-content: center; }
-.controls input { width: 120px; padding: 12px; border-radius: 10px; border: none; font-size: 16px; }
-.controls button { padding: 12px 24px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; background: #2f80ed; color: #fff; }
-.controls button:disabled { opacity: 0.4; }
-.message { margin-top: 16px; opacity: 0.9; }
+node_modules
+dist
+.env
+.env.local
+.DS_Store

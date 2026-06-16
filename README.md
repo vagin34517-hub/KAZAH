@@ -1,9 +1,6 @@
-# TON Casino Mini App (frontend)
+# TON Casino Mini App (frontend, flat layout)
 
-Starter для Telegram Mini App на React + Vite + TON Connect.
-Клиент подключается к бэкенду по WebSocket; игровая логика и выплаты — на сервере.
-
-## Запуск
+Все исходники лежат в корне (без папки src) — чтобы GitHub точно ничего не терял при веб-загрузке.
 
 ```bash
 npm install
@@ -11,30 +8,7 @@ npm run dev
 npm run build
 ```
 
-## Переменные окружения (`.env`)
+## ENV (потом на Vercel)
 
-- `VITE_API_BASE` — URL бэкенда (https://...)
-- `VITE_WS_URL` — WebSocket URL (wss://...)
-
-## Деплой
-
-Проще всего Vercel / Netlify / Cloudflare Pages — подключи GitHub-репо, build = `npm run build`, output = `dist`.
-Готовый URL вставь в BotFather как Mini App URL.
-
-## Структура
-
-```
-src/
-  main.tsx          — entry
-  App.tsx           — оболочка + TON Connect
-  telegram.ts       — Telegram WebApp SDK
-  api.ts            — клиент REST API бэкенда
-  CrashGame.tsx     — UI Ракетки
-  styles.css
-```
-
-## Важно
-
-Это только фронт. Для работы нужен бэкенд:
-валидация initData (HMAC по bot token), движок Crash с provably fair,
-учёт баланса, TON депозиты/выводы.
+- `VITE_API_BASE` — URL бэкенда
+- `VITE_WS_URL` — WebSocket URL
