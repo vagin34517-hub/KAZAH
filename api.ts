@@ -1,6 +1,6 @@
 import { getInitData } from "./telegram"
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? "https://api.example.com"
+const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? ""
 
 async function request<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -15,8 +15,14 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+export type MeInfo = { userId: number; name: string; balance: number; online: number }
+export type Player = { userId: number; name: string; avatar?: string; bet: number; multiplier?: number; payout?: number; status: "playing" | "cashed" | "lost" }
+export type HistoryItem = { roundId: string; crashPoint: number }
+
 export const api = {
-  getBalance: () => request<{ balance: number }>("/me/balance"),
-  placeBet: (amount: number) => request<{ betId: string }>("/game/bet", { amount }),
-  cashout: (betId: string) => request<{ payout: number }>("/game/cashout", { betId }),
+  me: () => request<MeInfo>("/api/me"),
+  history: () => request<{ items: HistoryItem[] }>("/api/history"),
+  players: () => request<{ players: Player[] }>("/api/players"),
+  placeBet: (amount: number) => request<{ betId: string }>("/api/bet", { amount }),
+  cashout: (betId: string) => request<{ payout: number }>("/api/cashout", { betId }),
 }
