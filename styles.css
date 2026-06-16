@@ -608,3 +608,61 @@ button { font-family: inherit; }
 /* Make sure old big-multiplier (if any cached) is hidden in favor of new ones. */
 .big-multiplier { display: none !important; }
 .countdown-wrap { display: none !important; }
+
+
+/* ===== v5.2: FORCE rocket + planet visibility (override base CSS) ===== */
+
+/* Base CSS hides .planet-bg with display:none. Override. */
+.sky .planet-bg {
+  display: block !important;
+  position: absolute;
+  top: 6%;
+  right: -50px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ffb98a 0%, #d96a3e 40%, #7a2a18 80%, #2a0a05 100%);
+  box-shadow:
+    inset -22px -22px 50px rgba(0, 0, 0, 0.65),
+    0 0 70px rgba(255, 130, 70, 0.28);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 1;
+  animation: planetDrift 60s linear infinite;
+}
+
+/* Rocket: high z-index, big size, multi-layer glow that works even without CSS filter */
+.rocket-wrap {
+  position: absolute !important;
+  z-index: 50 !important;
+  font-size: 56px !important;
+  pointer-events: none;
+  will-change: transform, opacity;
+  line-height: 1;
+  text-align: center;
+}
+.rocket-wrap .rocket-emoji {
+  display: inline-block;
+  font-size: 56px;
+  line-height: 1;
+  /* Fallback glow via text-shadow (works on all emoji renderers, even iOS that ignores filter on emoji) */
+  text-shadow:
+    0 0 14px rgba(255, 179, 71, 0.9),
+    0 0 30px rgba(255, 107, 53, 0.7),
+    0 4px 12px rgba(0, 0, 0, 0.6);
+}
+.rocket-wrap.waiting .rocket-emoji {
+  text-shadow:
+    0 0 14px rgba(120, 200, 255, 0.7),
+    0 0 28px rgba(54, 177, 255, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.6);
+}
+.rocket-wrap.crashed .rocket-emoji {
+  text-shadow:
+    0 0 18px rgba(255, 71, 87, 0.9),
+    0 0 36px rgba(255, 71, 87, 0.6);
+}
+
+/* Make sure SVG chart can't overlap the rocket */
+.chart { z-index: 2 !important; }
+.sky .rocket-wrap { z-index: 50 !important; }
