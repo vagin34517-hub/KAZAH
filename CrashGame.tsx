@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react"
-import { api, type Player, type HistoryItem } from "./api"
+import { api, deriveWsUrl, type Player, type HistoryItem } from "./api"
 import { useT } from "./i18n"
 import { haptic } from "./telegram"
 import { loadSkin, loadBg } from "./Settings"
 
 type Phase = "waiting" | "running" | "crashed"
 
-const WS_URL = (import.meta as any).env?.VITE_WS_URL ?? ""
+const WS_URL = deriveWsUrl()
 const SKIN_EMOJI: Record<string, string> = {
   rocket: "🚀", ufo: "🛸", plane: "✈️", helicopter: "🚁",
   satellite: "🛰️", meteor: "☄️", alien: "👽", fire: "🔥", star: "⭐",
@@ -50,34 +50,75 @@ export function CrashGame({ skin, bg }: { skin: string; bg: string }) {
     api.players().then((r) => setPlayers(r.players)).catch(() => {})
   }, [])
 
-  // WS connect.
+  // WS connect with polling fallback. Rocket always flies even if WS is blocked.
   useEffect(() => {
-    if (!WS_URL) return
     let ws: WebSocket | null = null
     let reconnect: any = null
+    let pollTimer: any = null
+    let wsAlive = false
+    let lastPhase: Phase = "waiting"
+
+    function applyState(s: { phase: Phase; multiplier: number; crashPoint?: number; players?: Player[] }) {
+      if (s.phase !== lastPhase) {
+        if (s.phase === "crashed") haptic("error")
+        if (s.phase === "waiting") setBetId(null)
+        lastPhase = s.phase
+        if (s.phase === "waiting" || s.phase === "crashed") {
+          api.history().then((r) => setHistory(r.items)).catch(() => {})
+        }
+      }
+      setPhase(s.phase)
+      setMultiplier(s.phase === "crashed" && s.crashPoint ? s.crashPoint : s.multiplier)
+      if (s.players) setPlayers(s.players)
+    }
+
+    function startPolling() {
+      if (pollTimer) return
+      const tick = () => {
+        if (wsAlive) { pollTimer = null; return }
+        api.state()
+          .then((s) => applyState(s as any))
+          .catch(() => {})
+          .finally(() => { pollTimer = setTimeout(tick, 400) })
+      }
+      tick()
+    }
+
     function connect() {
+      if (!WS_URL) { startPolling(); return }
       try {
         ws = new WebSocket(WS_URL)
+        ws.onopen = () => { wsAlive = true; if (pollTimer) { clearTimeout(pollTimer); pollTimer = null } }
         ws.onmessage = (e) => {
           const msg = JSON.parse(e.data)
-          if (msg.type === "tick") { setPhase("running"); setMultiplier(msg.multiplier) }
-          else if (msg.type === "running") { setPhase("running"); if (msg.multiplier) setMultiplier(msg.multiplier) }
+          if (msg.type === "tick") { setPhase("running"); setMultiplier(msg.multiplier); lastPhase = "running" }
+          else if (msg.type === "running") { setPhase("running"); if (msg.multiplier) setMultiplier(msg.multiplier); lastPhase = "running" }
           else if (msg.type === "crash") {
-            setPhase("crashed"); setMultiplier(msg.crashPoint); setBetId(null); haptic("error")
+            setPhase("crashed"); setMultiplier(msg.crashPoint); setBetId(null); haptic("error"); lastPhase = "crashed"
             api.history().then((r) => setHistory(r.items)).catch(() => {})
             api.players().then((r) => setPlayers(r.players)).catch(() => {})
           }
           else if (msg.type === "waiting") {
-            setPhase("waiting"); setMultiplier(1.0); setBetId(null)
+            setPhase("waiting"); setMultiplier(1.0); setBetId(null); lastPhase = "waiting"
             api.players().then((r) => setPlayers(r.players)).catch(() => {})
           }
           else if (msg.type === "players") setPlayers(msg.players)
         }
-        ws.onclose = () => { reconnect = setTimeout(connect, 2000) }
-      } catch {}
+        ws.onclose = () => {
+          wsAlive = false
+          startPolling()
+          reconnect = setTimeout(connect, 3000)
+        }
+        ws.onerror = () => { wsAlive = false; startPolling() }
+      } catch { startPolling() }
     }
     connect()
-    return () => { clearTimeout(reconnect); try { ws?.close() } catch {} }
+    // Always also start polling after 1.5s as a safety net.
+    const guard = setTimeout(() => { if (!wsAlive) startPolling() }, 1500)
+    return () => {
+      clearTimeout(reconnect); clearTimeout(pollTimer); clearTimeout(guard)
+      try { ws?.close() } catch {}
+    }
   }, [])
 
   async function onMainAction() {
