@@ -61,9 +61,20 @@ input { font-family: inherit; outline: none; border: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 8px;
+  /* Respect iOS notch / status bar so balance "+" doesn't slip under LTE icon */
+  padding: max(14px, calc(env(safe-area-inset-top) + 8px)) 16px 8px;
   position: relative;
   z-index: 10;
+  gap: 10px;
+  min-height: 56px;
+}
+.top-header-right { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.brand { flex-shrink: 0; }
+/* Slightly smaller balance pill on narrow phones to leave room next to TG status icons */
+@media (max-width: 380px) {
+  .balance-pill { padding: 7px 11px; font-size: 14px; gap: 6px; }
+  .balance-pill .plus-mark { font-size: 16px; padding: 0 6px; }
+  .brand { font-size: 19px; letter-spacing: 1px; }
 }
 .brand {
   font-weight: 900;
@@ -2036,7 +2047,7 @@ input { font-family: inherit; outline: none; border: none; }
 .gift-card.disabled { opacity: 0.42; cursor: not-allowed; }
 .gift-card.picked { border-color: #ffd166; box-shadow: 0 0 18px rgba(255, 209, 102, 0.45); }
 
-/* Subtle rarity tint — just a soft glow halo behind the gift, no full-card color */
+/* Subtle rarity tint �� just a soft glow halo behind the gift, no full-card color */
 .gift-card.rarity-uncommon { border-color: rgba(95, 209, 106, 0.20); box-shadow: inset 0 0 12px rgba(95, 209, 106, 0.06); }
 .gift-card.rarity-rare      { border-color: rgba(56, 178, 255, 0.30); box-shadow: inset 0 0 14px rgba(56, 178, 255, 0.10); }
 .gift-card.rarity-epic      { border-color: rgba(186, 100, 255, 0.45); box-shadow: inset 0 0 18px rgba(186, 100, 255, 0.15); }
