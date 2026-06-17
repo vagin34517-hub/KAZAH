@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { api, deriveWsUrl, type Player, type HistoryItem } from "./api"
 import { useT } from "./i18n"
+import { Avatar } from "./Avatar"
 import { haptic } from "./telegram"
 
 type Phase = "waiting" | "running" | "crashed"
@@ -418,9 +419,9 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
         {players.length === 0 && <div className="empty">{t("waiting_bets")}</div>}
         {players.map((p, idx) => (
           <div key={p.userId + ":" + p.bet + ":" + idx} className={"player-row " + p.status}>
-            <div className="avatar">{(p.name || "?").slice(0, 1).toUpperCase()}</div>
+            <Avatar userId={p.userId} name={p.name} photo={p.photo} level={p.level} size={42} />
             <div className="player-info">
-              <div className="player-name">{p.name}</div>
+              <div className="player-name">{p.name}{p.username ? <span className="player-uname"> @{p.username}</span> : null}</div>
               <div className="player-bet">💎 {p.bet.toFixed(2)}{p.multiplier ? <span className="x"> ×{p.multiplier.toFixed(2)}</span> : null}</div>
             </div>
             <div className="player-result">

@@ -4,6 +4,7 @@ import { haptic, shareToTelegram, copyText } from "./telegram"
 import type { MeInfo } from "./api"
 import { DepositModal } from "./DepositModal"
 import { WithdrawModal } from "./WithdrawModal"
+import { Avatar } from "./Avatar"
 
 export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSettings: () => void }) {
   const { t, lang } = useT()
@@ -55,7 +56,7 @@ export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSetti
 
       <div className="profile-hero">
         <div className="hero-bg" />
-        <div className="big-avatar">{(me?.name || "?").slice(0, 2).toUpperCase()}</div>
+        <Avatar userId={me?.userId ?? 0} name={me?.name} photo={me?.photo} level={me?.level} size={72} ring={true} className="big" />
         <div className="profile-name">{me?.name || "—"} · <span className="lv">{me?.level ?? 1} {t("level")}</span></div>
         <div className="xp-bar">
           <div className="xp-fill" style={{ width: `${xpPct}%` }} />

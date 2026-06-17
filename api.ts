@@ -24,8 +24,20 @@ export type MeInfo = {
   userId: number; name: string; balance: number; online: number;
   level: number; xp: number; xpNext: number; refs: number; refBalance: number;
   inviteUrl: string;
+  photo?: string | null;
+  username?: string | null;
 }
-export type Player = { userId: number; name: string; bet: number; multiplier?: number; payout?: number; status: "playing" | "cashed" | "lost" }
+export type Player = {
+  userId: number;
+  name: string;
+  bet: number;
+  multiplier?: number;
+  payout?: number;
+  status: "playing" | "cashed" | "lost";
+  photo?: string | null;
+  username?: string | null;
+  level?: number;
+}
 export type HistoryItem = { roundId: string; crashPoint: number }
 export type DepositInfo = { address: string; comment: string; minTon: number; enabled: boolean }
 export type GameState = {
