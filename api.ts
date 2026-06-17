@@ -41,6 +41,27 @@ export type MinesOpen = { ok: boolean; hit: boolean; multiplier: number; opened:
 export type MinesCashout = { payout: number; multiplier: number; mines: number[] }
 export type MinesActive = { game: null | { gameId: string; bet: number; mines: number; multiplier: number; opened: number[] } }
 
+export type WithdrawInfo = {
+  balance: number
+  min: number
+  max: number
+  fee: number
+  wagerRequirement: number
+  totalDeposited: number
+  canWithdraw: boolean
+}
+export type WithdrawItem = {
+  id: number
+  amount: number
+  fee: number
+  address: string
+  status: "pending" | "approved" | "rejected"
+  txHash: string | null
+  reason: string | null
+  createdAt: number
+  processedAt: number | null
+}
+
 export const api = {
   me: () => request<MeInfo>("/api/me"),
   history: () => request<{ items: HistoryItem[] }>("/api/history"),
@@ -53,6 +74,11 @@ export const api = {
   minesOpen: (gameId: string, cell: number) => request<MinesOpen>("/api/mines/open", { gameId, cell }),
   minesCashout: (gameId: string) => request<MinesCashout>("/api/mines/cashout", { gameId }),
   minesActive: () => request<MinesActive>("/api/mines/active"),
+
+  withdrawInfo: () => request<WithdrawInfo>("/api/withdraw/info"),
+  withdrawRequest: (amount: number, address: string) =>
+    request<{ ok: true; id: number }>("/api/withdraw/request", { amount, address }),
+  withdrawList: () => request<{ items: WithdrawItem[] }>("/api/withdraw/list"),
 }
 
 export function deriveWsUrl(): string {

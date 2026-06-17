@@ -3,10 +3,12 @@ import { useT, LANGS, setLang, type Lang } from "./i18n"
 import { haptic, shareToTelegram, copyText } from "./telegram"
 import type { MeInfo } from "./api"
 import { DepositModal } from "./DepositModal"
+import { WithdrawModal } from "./WithdrawModal"
 
 export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSettings: () => void }) {
   const { t, lang } = useT()
   const [langOpen, setLangOpen] = useState(false)
+  const [wdOpen, setWdOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [toast, setToast] = useState("")
   const [depOpen, setDepOpen] = useState(false)
@@ -62,8 +64,8 @@ export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSetti
       </div>
 
       <div className="action-pair">
-        <button className="big-btn primary" onClick={() => { haptic("medium"); setDepOpen(true) }}>{t("topup")}</button>
-        <button className="big-btn ghost" onClick={onRewards}>{t("rewards")}</button>
+        <button className="big-btn primary" onClick={() => { haptic("medium"); setDepOpen(true) }}>➕ {t("topup")}</button>
+        <button className="big-btn warn" onClick={() => { haptic("medium"); setWdOpen(true) }}>💸 {t("wd_title")}</button>
       </div>
 
       <div className="ref-card">
@@ -85,6 +87,7 @@ export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSetti
       <div className="inventory-box">{t("inventory_empty")}</div>
 
       <DepositModal open={depOpen} onClose={() => setDepOpen(false)} />
+      <WithdrawModal open={wdOpen} onClose={() => setWdOpen(false)} />
       {toast && <div className="toast">{toast}</div>}
     </div>
   )
