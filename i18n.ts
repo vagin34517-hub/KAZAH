@@ -4,7 +4,8 @@ export type Lang = "ru" | "en" | "ua"
 
 const dict: Record<Lang, Record<string, string>> = {
   ru: {
-    crash: "Краш", cases: "Кейсы", mines: "Мины", season: "Сезон", profile: "Профиль",
+    crash: "Краш", cases: "Кейсы", mines: "Мины", season: "Сезон", leaderboard: "Топ", profile: "Профиль",
+    lb_balance: "По балансу", lb_deposited: "По депам", lb_empty: "Ещё никто не отметился", lb_your_rank: "Твоё место",
     mines_bet: "Ставка", mines_count: "Кол-во мин", mines_mult: "Множитель", mines_profit: "Прибыль",
     mines_play: "Играть", mines_play_again: "Ещё раз", mines_retry: "Повторить", mines_cashout: "Забрать",
     mines_boom: "💥 Бум! Проиграл", mines_max: "Макс", mines_first_payout: "Первый пик", mines_next_mult: "След. открытие",
@@ -35,7 +36,8 @@ const dict: Record<Lang, Record<string, string>> = {
     wd_bad_amount: "Неверная сумма", wd_bad_addr: "Введите TON-адрес", wd_submitted: "Заявка отправлена",
   },
   en: {
-    crash: "Crash", cases: "Cases", mines: "Mines", season: "Season", profile: "Profile",
+    crash: "Crash", cases: "Cases", mines: "Mines", season: "Season", leaderboard: "Top", profile: "Profile",
+    lb_balance: "By balance", lb_deposited: "By deposits", lb_empty: "No one is on the board yet", lb_your_rank: "Your rank",
     mines_bet: "Bet", mines_count: "Mines", mines_mult: "Multiplier", mines_profit: "Profit",
     mines_play: "Play", mines_play_again: "Play again", mines_retry: "Retry", mines_cashout: "Cash out",
     mines_boom: "💥 Boom! You lost", mines_max: "Max", mines_first_payout: "First pick", mines_next_mult: "Next pick",
@@ -66,7 +68,8 @@ const dict: Record<Lang, Record<string, string>> = {
     wd_bad_amount: "Invalid amount", wd_bad_addr: "Enter a TON address", wd_submitted: "Request submitted",
   },
   ua: {
-    crash: "Креш", cases: "Кейси", mines: "Міни", season: "Сезон", profile: "Профіль",
+    crash: "Креш", cases: "Кейси", mines: "Міни", season: "Сезон", leaderboard: "Топ", profile: "Профіль",
+    lb_balance: "За балансом", lb_deposited: "За депами", lb_empty: "Ще ніхто не відзначився", lb_your_rank: "Твоє місце",
     mines_bet: "Ставка", mines_count: "К-ть мін", mines_mult: "Множник", mines_profit: "Прибуток",
     mines_play: "Грати", mines_play_again: "Ще раз", mines_retry: "Ретрай", mines_cashout: "Забрати",
     mines_boom: "💥 Бум! Програв", mines_max: "Макс", mines_first_payout: "Перший пік", mines_next_mult: "Наст. пік",

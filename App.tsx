@@ -6,7 +6,7 @@ import { BottomNav } from "./BottomNav"
 import { Settings, loadSkin, loadBg, loadVib } from "./Settings"
 import { Profile } from "./Profile"
 import { Mines } from "./Mines"
-import { Season } from "./Season"
+import { Leaderboard } from "./Leaderboard"
 import { DepositModal } from "./DepositModal"
 import "./styles.css"
 
@@ -59,7 +59,7 @@ export default function App() {
       <main className="main-content">
         {tab === "crash" && <CrashGame skin={skin} bg={bg} />}
         {tab === "mines" && <Mines />}
-        {tab === "season" && <Season level={me?.level ?? 1} />}
+        {tab === "leaderboard" && <Leaderboard myUserId={me?.userId} />}
         {tab === "profile" && <Profile me={me} onOpenSettings={() => setSettingsOpen(true)} />}
       </main>
 
