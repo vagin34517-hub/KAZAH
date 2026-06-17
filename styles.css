@@ -131,7 +131,7 @@ input { font-family: inherit; outline: none; border: none; }
 }
 
 /* ============================================
-   Sky (game canvas)
+   Sky (game canvas) — cinematic deep space
    ============================================ */
 .sky {
   position: relative;
@@ -140,33 +140,153 @@ input { font-family: inherit; outline: none; border: none; }
   border-radius: 24px;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 110%, rgba(255, 107, 53, 0.25) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(164, 114, 255, 0.35) 0%, transparent 60%),
-    linear-gradient(180deg, #1a0d3a 0%, #0d0625 70%, #050313 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: var(--shadow-lg), inset 0 0 60px rgba(0, 0, 0, 0.4);
+    /* Warm engine glow rising from below */
+    radial-gradient(ellipse 90% 50% at 50% 115%, rgba(255, 107, 53, 0.32) 0%, transparent 65%),
+    /* Pink-magenta nebula upper-left */
+    radial-gradient(ellipse 55% 45% at 22% 25%, rgba(255, 102, 196, 0.22) 0%, transparent 70%),
+    /* Purple nebula upper-right */
+    radial-gradient(ellipse 65% 50% at 78% 22%, rgba(164, 114, 255, 0.38) 0%, transparent 65%),
+    /* Cyan accent mid */
+    radial-gradient(ellipse 50% 35% at 35% 65%, rgba(54, 177, 255, 0.18) 0%, transparent 70%),
+    /* Deep space gradient base */
+    linear-gradient(180deg, #1f1148 0%, #150935 35%, #0a0420 70%, #03020e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 0 80px rgba(0, 0, 0, 0.55),
+    inset 0 -40px 80px rgba(255, 138, 60, 0.06);
 }
 
-/* Starfield — static (perf). */
+/* Top light-ray vignette — soft beam from the planet area */
+.sky::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 35% 90% at 75% -10%, rgba(255, 200, 150, 0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 25% 80% at 25% 110%, rgba(255, 138, 60, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Earth/horizon curve at the very bottom */
+.sky::after {
+  content: "";
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -45%;
+  height: 70%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(110, 180, 255, 0.35) 0%, rgba(54, 100, 200, 0.18) 25%, rgba(20, 40, 90, 0.08) 50%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Multi-layer starfield: 3 layers with twinkle + slow parallax drift */
 .sky .stars {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.9), transparent),
-    radial-gradient(1px 1px at 60% 70%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(2px 2px at 80% 40%, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(1px 1px at 15% 80%, rgba(255, 255, 255, 0.85), transparent),
-    radial-gradient(1.5px 1.5px at 70% 15%, rgba(255, 255, 255, 0.75), transparent),
-    radial-gradient(1px 1px at 35% 55%, rgba(255, 255, 255, 0.5), transparent),
-    radial-gradient(2px 2px at 90% 80%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 45% 10%, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(1px 1px at 5% 50%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1.5px 1.5px at 50% 90%, rgba(255, 255, 255, 0.55), transparent);
+    radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.95), transparent 60%),
+    radial-gradient(1px 1px at 60% 70%, rgba(180, 220, 255, 0.85), transparent 60%),
+    radial-gradient(2px 2px at 80% 40%, rgba(255, 255, 255, 0.95), transparent 55%),
+    radial-gradient(1.5px 1.5px at 15% 78%, rgba(255, 230, 200, 0.9), transparent 55%),
+    radial-gradient(1.5px 1.5px at 70% 15%, rgba(200, 230, 255, 0.85), transparent 60%),
+    radial-gradient(1px 1px at 35% 55%, rgba(255, 255, 255, 0.6), transparent 60%),
+    radial-gradient(2.5px 2.5px at 90% 82%, rgba(255, 255, 200, 0.95), transparent 55%),
+    radial-gradient(1px 1px at 45% 8%, rgba(255, 255, 255, 0.75), transparent 60%),
+    radial-gradient(1px 1px at 8% 48%, rgba(220, 240, 255, 0.85), transparent 60%),
+    radial-gradient(1.5px 1.5px at 52% 90%, rgba(255, 220, 200, 0.7), transparent 55%),
+    radial-gradient(1px 1px at 28% 18%, rgba(255, 255, 255, 0.65), transparent 60%),
+    radial-gradient(1px 1px at 88% 60%, rgba(220, 220, 255, 0.7), transparent 60%);
   background-size: 100% 100%;
-  opacity: 0.85;
-  animation: none !important;
+  opacity: 0.95;
+  z-index: 2;
+  animation: starsTwinkle 4s ease-in-out infinite alternate;
 }
+
+/* Second star layer (smaller, denser, slow parallax) */
+.sky .stars::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(0.5px 0.5px at 12% 22%, rgba(255, 255, 255, 0.7), transparent 50%),
+    radial-gradient(0.5px 0.5px at 38% 44%, rgba(200, 220, 255, 0.6), transparent 50%),
+    radial-gradient(0.5px 0.5px at 62% 28%, rgba(255, 230, 200, 0.65), transparent 50%),
+    radial-gradient(0.5px 0.5px at 84% 66%, rgba(180, 200, 255, 0.6), transparent 50%),
+    radial-gradient(0.5px 0.5px at 24% 62%, rgba(255, 255, 255, 0.55), transparent 50%),
+    radial-gradient(0.5px 0.5px at 48% 78%, rgba(255, 200, 220, 0.5), transparent 50%),
+    radial-gradient(0.5px 0.5px at 72% 82%, rgba(220, 240, 255, 0.6), transparent 50%),
+    radial-gradient(0.5px 0.5px at 95% 18%, rgba(255, 255, 255, 0.7), transparent 50%),
+    radial-gradient(0.5px 0.5px at 4% 88%, rgba(220, 200, 255, 0.6), transparent 50%);
+  animation: starsDrift 90s linear infinite;
+  opacity: 0.7;
+}
+
+/* Sparkle highlight stars — brighter, slow twinkle */
+.sky .stars::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 18% 14%, rgba(255, 255, 255, 1), transparent 40%),
+    radial-gradient(2.5px 2.5px at 75% 50%, rgba(255, 240, 200, 1), transparent 40%),
+    radial-gradient(2px 2px at 42% 36%, rgba(200, 240, 255, 1), transparent 40%);
+  animation: starsSparkle 3s ease-in-out infinite;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.7));
+}
+
+@keyframes starsTwinkle {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+@keyframes starsSparkle {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.2); }
+}
+@keyframes starsDrift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(-6%, 3%); }
+}
+
+/* Shooting star — occasional streak across the sky */
+.sky .shooting-star {
+  position: absolute;
+  top: 18%;
+  left: -10%;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0) 10%, rgba(255, 255, 255, 0.95) 60%, rgba(255, 230, 200, 1) 100%);
+  border-radius: 999px;
+  filter: drop-shadow(0 0 4px rgba(255, 240, 200, 0.95));
+  opacity: 0;
+  z-index: 3;
+  pointer-events: none;
+  animation: shootingStar 9s ease-in-out infinite;
+  animation-delay: 3s;
+  transform-origin: left center;
+  transform: rotate(20deg);
+}
+.sky .shooting-star.s2 {
+  top: 38%;
+  width: 90px;
+  animation-delay: 6.5s;
+  animation-duration: 11s;
+  transform: rotate(15deg);
+}
+@keyframes shootingStar {
+  0%   { opacity: 0; transform: translate(0, 0) rotate(20deg); }
+  3%   { opacity: 1; }
+  10%  { opacity: 1; }
+  18%  { opacity: 0; transform: translate(140%, 70%) rotate(20deg); }
+  100% { opacity: 0; transform: translate(140%, 70%) rotate(20deg); }
+}
+
 .sky .stars-2 { display: none !important; }
 
 /* Planet decoration — peach/orange, big, visible at upper area like the reference video */

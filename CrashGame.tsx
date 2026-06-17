@@ -303,6 +303,8 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
     <div className="crash-screen">
       <div ref={skyRef} className={"sky bg-" + bg}>
         <div className="stars" />
+        <div className="shooting-star" />
+        <div className="shooting-star s2" />
         <div className="planet-bg" />
 
         <svg className="chart" viewBox="0 0 100 100" preserveAspectRatio="none">
