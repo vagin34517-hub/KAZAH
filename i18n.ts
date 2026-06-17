@@ -4,7 +4,10 @@ export type Lang = "ru" | "en" | "ua"
 
 const dict: Record<Lang, Record<string, string>> = {
   ru: {
-    crash: "Краш", cases: "Кейсы", season: "Сезон", profile: "Профиль",
+    crash: "Краш", cases: "Кейсы", mines: "Мины", season: "Сезон", profile: "Профиль",
+    mines_bet: "Ставка", mines_count: "Кол-во мин", mines_mult: "Множитель", mines_profit: "Прибыль",
+    mines_play: "Играть", mines_play_again: "Ещё раз", mines_retry: "Повторить", mines_cashout: "Забрать",
+    mines_boom: "💥 Бум! Проиграл", mines_max: "Макс", mines_first_payout: "Первый пик", mines_next_mult: "След. открытие",
     waiting: "Ожидание", place_bet: "Сделать ставку", cashout: "Забрать",
     waiting_bets: "Ожидание ставок", no_one_playing: "Пока никто не играет",
     settings: "Настройки", skin: "Скин", background: "Фон", language: "Язык",
@@ -25,7 +28,10 @@ const dict: Record<Lang, Record<string, string>> = {
     dep_hint: "Баланс начисляется автоматически в течение 1 минуты после подтверждения транзакции.",
   },
   en: {
-    crash: "Crash", cases: "Cases", season: "Season", profile: "Profile",
+    crash: "Crash", cases: "Cases", mines: "Mines", season: "Season", profile: "Profile",
+    mines_bet: "Bet", mines_count: "Mines", mines_mult: "Multiplier", mines_profit: "Profit",
+    mines_play: "Play", mines_play_again: "Play again", mines_retry: "Retry", mines_cashout: "Cash out",
+    mines_boom: "💥 Boom! You lost", mines_max: "Max", mines_first_payout: "First pick", mines_next_mult: "Next pick",
     waiting: "Waiting", place_bet: "Place bet", cashout: "Cash out",
     waiting_bets: "Waiting for bets", no_one_playing: "No one is playing yet",
     settings: "Settings", skin: "Skin", background: "Background", language: "Language",
@@ -46,7 +52,10 @@ const dict: Record<Lang, Record<string, string>> = {
     dep_hint: "Balance will be credited automatically within 1 minute after the tx is confirmed.",
   },
   ua: {
-    crash: "Креш", cases: "Кейси", season: "Сезон", profile: "Профіль",
+    crash: "Креш", cases: "Кейси", mines: "Міни", season: "Сезон", profile: "Профіль",
+    mines_bet: "Ставка", mines_count: "К-ть мін", mines_mult: "Множник", mines_profit: "Прибуток",
+    mines_play: "Грати", mines_play_again: "Ще раз", mines_retry: "Ретрай", mines_cashout: "Забрати",
+    mines_boom: "💥 Бум! Програв", mines_max: "Макс", mines_first_payout: "Перший пік", mines_next_mult: "Наст. пік",
     waiting: "Очікування", place_bet: "Зробити ставку", cashout: "Забрати",
     waiting_bets: "Очікування ставок", no_one_playing: "Поки ніхто не грає",
     settings: "Налаштування", skin: "Скін", background: "Фон", language: "Мова",

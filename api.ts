@@ -36,6 +36,11 @@ export type GameState = {
   players: Player[]
 }
 
+export type MinesStart = { gameId: string; multiplier: number; opened: number[]; mines: number }
+export type MinesOpen = { ok: boolean; hit: boolean; multiplier: number; opened: number[]; mines?: number[]; payout?: number; autoCashout?: boolean }
+export type MinesCashout = { payout: number; multiplier: number; mines: number[] }
+export type MinesActive = { game: null | { gameId: string; bet: number; mines: number; multiplier: number; opened: number[] } }
+
 export const api = {
   me: () => request<MeInfo>("/api/me"),
   history: () => request<{ items: HistoryItem[] }>("/api/history"),
@@ -44,6 +49,10 @@ export const api = {
   depositInfo: () => request<DepositInfo>("/api/deposit/info"),
   placeBet: (amount: number) => request<{ betId: string }>("/api/bet", { amount }),
   cashout: (betId: string) => request<{ payout: number }>("/api/cashout", { betId }),
+  minesStart: (bet: number, mines: number) => request<MinesStart>("/api/mines/start", { bet, mines }),
+  minesOpen: (gameId: string, cell: number) => request<MinesOpen>("/api/mines/open", { gameId, cell }),
+  minesCashout: (gameId: string) => request<MinesCashout>("/api/mines/cashout", { gameId }),
+  minesActive: () => request<MinesActive>("/api/mines/active"),
 }
 
 export function deriveWsUrl(): string {

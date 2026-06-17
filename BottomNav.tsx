@@ -3,7 +3,7 @@ import { haptic } from "./telegram"
 
 const tabs = [
   { id: "crash", icon: "🚀" },
-  { id: "cases", icon: "🎁" },
+  { id: "mines", icon: "💣" },
   { id: "season", icon: "🏆" },
   { id: "profile", icon: "👤" },
 ]
