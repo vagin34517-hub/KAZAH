@@ -58,10 +58,29 @@ export function Profile({ me, onOpenSettings }: { me: MeInfo | null; onOpenSetti
         <div className="hero-bg" />
         <Avatar userId={me?.userId ?? 0} name={me?.name} photo={me?.photo} level={me?.level} size={72} ring={true} className="big" />
         <div className="profile-name">{me?.name || "—"} · <span className="lv">{me?.level ?? 1} {t("level")}</span></div>
+        <div className="profile-id">ID {me?.userId ?? "—"}{me?.username ? " · @" + me.username : ""}</div>
         <div className="xp-bar">
           <div className="xp-fill" style={{ width: `${xpPct}%` }} />
         </div>
-        <div className="xp-text">{me?.xp?.toFixed(1) ?? 0} / {me?.xpNext ?? 10} TON</div>
+        <div className="xp-text">{me?.xp?.toFixed(1) ?? 0} / {me?.xpNext ?? 10} TON → {t("level")} {(me?.level ?? 1) + 1}</div>
+      </div>
+
+      <div className="profile-stats-row">
+        <div className="profile-stat-card">
+          <div className="profile-stat-icon">💰</div>
+          <div className="profile-stat-value">{(me?.balance ?? 0).toFixed(2)}</div>
+          <div className="profile-stat-label">TON баланс</div>
+        </div>
+        <div className="profile-stat-card">
+          <div className="profile-stat-icon online"><span className="pulse-dot" />Онлайн</div>
+          <div className="profile-stat-value">{me?.activeNow ?? me?.online ?? 1}</div>
+          <div className="profile-stat-label">игроков сейчас</div>
+        </div>
+        <div className="profile-stat-card">
+          <div className="profile-stat-icon">👥</div>
+          <div className="profile-stat-value">{me?.totalPlayers ?? 0}</div>
+          <div className="profile-stat-label">всего в игре</div>
+        </div>
       </div>
 
       <div className="action-pair">
