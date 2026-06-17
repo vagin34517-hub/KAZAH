@@ -359,8 +359,8 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
               </radialGradient>
             </defs>
             {/* Flame */}
-            <ellipse cx="24" cy="72" rx="9" ry="7" fill="url(#flame)" />
-            <ellipse cx="24" cy="68" rx="5" ry="4" fill="#fffae0" opacity="0.9" />
+            <ellipse className="rkt-flame rkt-flame-outer" cx="24" cy="72" rx="9" ry="7" fill="url(#flame)" />
+            <ellipse className="rkt-flame rkt-flame-inner" cx="24" cy="68" rx="5" ry="4" fill="#fffae0" opacity="0.9" />
             {/* Left fin */}
             <path d="M14 48 L4 66 L17 58 Z" fill="url(#finL)" stroke="#7a1626" strokeWidth="0.6" strokeLinejoin="round" />
             {/* Right fin */}

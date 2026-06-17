@@ -8,6 +8,7 @@ import { Profile } from "./Profile"
 import { Mines } from "./Mines"
 import { Leaderboard } from "./Leaderboard"
 import { DepositModal } from "./DepositModal"
+import { Splash } from "./Splash"
 import "./styles.css"
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
   const [tab, setTab] = useState("crash")
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [depositOpen, setDepositOpen] = useState(false)
+  const [splashDone, setSplashDone] = useState(false)
   const [skin, setSkin] = useState(loadSkin())
   const [bg, setBg] = useState(loadBg())
   const [_vib, setVib] = useState(loadVib())
@@ -35,6 +37,7 @@ export default function App() {
 
   return (
     <div className={`app theme-${bg}`}>
+      {!splashDone && <Splash onDone={() => setSplashDone(true)} />}
       <header className="top-header">
         <div className="brand">KAZAH</div>
         <div className="top-header-right">
