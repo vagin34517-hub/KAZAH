@@ -321,6 +321,7 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
         </svg>
 
         <div ref={cdRef} className="countdown-big" style={HIDDEN}>10</div>
+        {phase === "waiting" && <div className="countdown-label">{t("waiting")}</div>}
         <div ref={multRef} className="running-big" style={HIDDEN}>1.00</div>
 
         <div ref={rocketRef} className="rocket-wrap">
@@ -368,6 +369,12 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
           <button className="bet-step" onClick={() => { haptic("light"); setBet((b) => Math.max(0.1, +(b - 0.5).toFixed(2))) }} disabled={!!betId}>−</button>
           <input type="number" min={0.1} step={0.1} value={bet} disabled={!!betId} onChange={(e) => setBet(Number(e.target.value))} />
           <button className="bet-step" onClick={() => { haptic("light"); setBet((b) => +(b + 0.5).toFixed(2)) }} disabled={!!betId}>+</button>
+        </div>
+        <div className="quick-bets">
+          <button className="quick-bet" disabled={!!betId} onClick={() => { haptic("light"); setBet((b) => Math.max(0.1, +(b / 2).toFixed(2))) }}>½</button>
+          <button className="quick-bet" disabled={!!betId} onClick={() => { haptic("light"); setBet((b) => +(b * 2).toFixed(2)) }}>×2</button>
+          <button className="quick-bet" disabled={!!betId} onClick={() => { haptic("light"); setBet(1) }}>1</button>
+          <button className="quick-bet" disabled={!!betId} onClick={() => { haptic("light"); setBet(5) }}>5</button>
         </div>
         <button
           className={"main-action " + (phase === "running" && betId ? "cashout" : "")}

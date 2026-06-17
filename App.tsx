@@ -35,13 +35,24 @@ export default function App() {
 
   return (
     <div className={`app theme-${bg}`}>
-      <header className="top-bar">
-        <div className="online"><span>👤</span><span>{me?.online ?? 0}</span></div>
-        <button className="icon-btn" onClick={() => { haptic("light"); setSettingsOpen(true) }}>⚙️</button>
-        <div className="balance-chip" onClick={() => { haptic("medium"); setDepositOpen(true) }}>
-          <span className="ton-icon">💎</span>
-          <span>{(me?.balance ?? 0).toFixed(2)}</span>
-          <button className="plus-btn" onClick={(e) => { e.stopPropagation(); haptic("medium"); setDepositOpen(true) }}>+</button>
+      <header className="top-header">
+        <div className="brand">KAZAH</div>
+        <div className="top-header-right">
+          <div className="balance-pill" onClick={() => { haptic("medium"); setDepositOpen(true) }}>
+            <svg className="ton-gem" viewBox="0 0 24 24" fill="none">
+              <path d="M2 7 L12 22 L22 7 L18 3 L6 3 Z" fill="url(#tonGrad)" stroke="#fff" strokeOpacity="0.3" strokeWidth="0.5"/>
+              <defs>
+                <linearGradient id="tonGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#6ee7ff"/>
+                  <stop offset="100%" stopColor="#0098ea"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span>{(me?.balance ?? 0).toFixed(2)}</span>
+            <span className="ton-suffix">TON</span>
+            <span className="plus-mark">+</span>
+          </div>
+          <button className="icon-btn" onClick={() => { haptic("light"); setSettingsOpen(true) }} aria-label="settings">⚙</button>
         </div>
       </header>
 
