@@ -953,3 +953,162 @@ input { font-family: inherit; outline: none; border: none; }
 
 /* Main content wrapper */
 .main-content { flex: 1; display: flex; flex-direction: column; overflow-x: hidden; }
+
+
+/* ============================================
+   Settings sheet cells (skin / bg / lang)
+   ============================================ */
+.sheet-tabs .tab { /* alias for .sheet-tabs button */ }
+.vib-btn {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 18px;
+  transition: background 0.2s, transform 0.1s;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff;
+  opacity: 0.55;
+}
+.vib-btn.on { opacity: 1; background: linear-gradient(135deg, rgba(54, 177, 255, 0.25), rgba(110, 231, 255, 0.18)); border-color: rgba(54, 177, 255, 0.4); }
+.vib-btn:active { transform: scale(0.92); }
+
+/* Skin cells: 3x3 grid */
+.grid-9 .cell, .cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 42px;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.2s, background 0.2s;
+  overflow: hidden;
+}
+.cell:active:not(.locked) { transform: scale(0.95); }
+.cell.selected {
+  border-color: rgba(54, 177, 255, 0.7);
+  background: linear-gradient(180deg, rgba(54, 177, 255, 0.2), rgba(54, 177, 255, 0.05));
+  box-shadow: 0 0 0 2px rgba(54, 177, 255, 0.3), 0 6px 16px rgba(54, 177, 255, 0.25);
+}
+.cell.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+.cell.locked .lock, .cell .lock {
+  position: static;
+  width: auto; height: auto;
+  background: transparent;
+  font-size: 22px;
+}
+.cell-emoji { font-size: 38px; line-height: 1; }
+
+/* Backgrounds: 2-col grid with preview */
+.bg-cell {
+  position: relative;
+  aspect-ratio: 1.6 / 1;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.1s, border-color 0.2s;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 10px;
+}
+.bg-cell:active:not(.locked) { transform: scale(0.96); }
+.bg-cell.selected {
+  border-color: rgba(54, 177, 255, 0.7);
+  box-shadow: 0 0 0 2px rgba(54, 177, 255, 0.3);
+}
+.bg-cell.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.5); }
+.bg-cell .bg-label {
+  position: relative; z-index: 2;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.bg-cell .lock.big { position: absolute; top: 8px; right: 8px; z-index: 3; }
+
+/* Background previews */
+.bg-stars { background:
+  radial-gradient(1px 1px at 20% 30%, #fff, transparent),
+  radial-gradient(1.5px 1.5px at 60% 60%, #fff, transparent),
+  radial-gradient(1px 1px at 80% 40%, #fff, transparent),
+  radial-gradient(1px 1px at 35% 80%, #fff, transparent),
+  linear-gradient(180deg, #0d0625, #050313);
+}
+.bg-planet { background:
+  radial-gradient(circle at 70% 30%, #ffb98a 0%, #d96a3e 30%, transparent 50%),
+  linear-gradient(180deg, #1a0d3a, #050313);
+}
+.bg-nebula { background:
+  radial-gradient(circle at 30% 40%, rgba(164, 114, 255, 0.6), transparent 50%),
+  radial-gradient(circle at 70% 60%, rgba(255, 107, 53, 0.5), transparent 50%),
+  linear-gradient(180deg, #1a0d3a, #050313);
+}
+.bg-galaxy { background:
+  conic-gradient(from 180deg at 50% 50%, #ffd166, #a472ff, #36b1ff, #ff6b35, #ffd166),
+  linear-gradient(180deg, #050313, #0d0625);
+  filter: blur(4px);
+}
+
+/* Lang rows */
+.lang-row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: left;
+  transition: background 0.15s, border-color 0.2s;
+}
+.lang-row:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.08); }
+.lang-row.selected {
+  background: linear-gradient(135deg, rgba(54, 177, 255, 0.2), rgba(110, 231, 255, 0.1));
+  border-color: rgba(54, 177, 255, 0.4);
+}
+.lang-list { display: flex; flex-direction: column; gap: 6px; }
+.lang-flag { font-size: 22px; }
+.lang-name { flex: 1; }
+.lang-check { color: var(--green); font-weight: 900; font-size: 18px; }
+
+/* Close button (bottom of sheet) */
+.sheet > .close-btn {
+  display: flex; width: 100%; height: 44px;
+  margin-top: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sheet > .close-btn.ghost { background: transparent; }
+
+/* Step number badge in deposit (override generic counter) */
+.deposit-step .step-num {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #36b1ff, #6ee7ff);
+  color: #fff;
+  font-weight: 900; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0;
+}
+.deposit-step::before { display: none !important; }
+.deposit-step .step-text { flex: 1; font-size: 14px; line-height: 1.4; align-self: center; }
+.deposit-field .field-value { display: flex; align-items: center; gap: 8px; }
+.deposit-field .field-value .mono { flex: 1; min-width: 0; }

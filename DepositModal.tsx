@@ -30,9 +30,17 @@ export function DepositModal({ open, onClose }: { open: boolean; onClose: () => 
   function openTransferLink() {
     if (!info?.address) return
     haptic("medium")
-    const url = "ton://transfer/" + info.address + "?text=" + encodeURIComponent(info.comment)
-    try { (window as any).Telegram?.WebApp?.openLink?.(url) } catch {}
-    try { window.location.href = url } catch {}
+    // Universal https deep link to Tonkeeper that works inside Telegram WebView
+    const https = "https://app.tonkeeper.com/transfer/" + info.address +
+      "?text=" + encodeURIComponent(info.comment) +
+      (info.minTon ? "&amount=" + Math.floor(info.minTon * 1e9) : "")
+    const tg: any = (window as any).Telegram?.WebApp
+    // Inside Telegram, openLink({ try_instant_view: false }) is the only reliable way out to a browser/wallet
+    try {
+      if (tg?.openLink) { tg.openLink(https, { try_instant_view: false }); return }
+    } catch {}
+    try { window.open(https, "_blank"); return } catch {}
+    try { window.location.href = https } catch {}
   }
 
   return (
