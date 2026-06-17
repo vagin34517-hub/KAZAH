@@ -30,6 +30,9 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
   const betRef = useRef(1)
   const betIdRef = useRef<string | null>(null)
   const skySizeRef = useRef({ w: 320, h: 280 })
+  // Clock skew correction: serverNow - clientNowOnReceive. Added to Date.now() = synced server time.
+  const serverOffsetRef = useRef(0)
+  const mountedAtRef = useRef(performance.now())
 
   const [phase, setPhase] = useState<Phase>("waiting")
   const [bet, setBet] = useState(1)
@@ -90,11 +93,17 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
     fillRef.current.setAttribute("d", d + " L" + lastX.toFixed(1) + ",88 L8,88 Z")
   }
 
-  // Animation loop — setInterval is cheaper than RAF on iOS for our throttled rate.
+  // Animation loop — RAF with frame throttle. More reliable on mobile foreground than setInterval.
   useEffect(() => {
     let lastTrail = 0
-    const id = setInterval(() => {
-      const now = Date.now()
+    let lastFrame = 0
+    let raf = 0
+    function tick(ts: number) {
+      raf = requestAnimationFrame(tick)
+      if (ts - lastFrame < FRAME_MS) return
+      lastFrame = ts
+      // syncedNow = server-aligned time. Fixes phones with skewed clocks.
+      const now = Date.now() + serverOffsetRef.current
       const ph = phaseRef.current
       const startedAt = startedAtRef.current
       const crashPoint = crashPointRef.current
@@ -152,7 +161,8 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
 
       // Rocket position via translate3d (GPU-accelerated, single transform).
       const progress = Math.min(1, Math.log(Math.max(1, m)) / Math.log(20))
-      const tAnim = now * 0.001
+      // Use elapsed-since-mount for sin/cos animations — small numbers, identical on every device.
+      const tAnim = (performance.now() - mountedAtRef.current) * 0.001
       let rxPct: number, ryPct: number, rot: number, sc: number, op: number
       if (ph === "waiting") {
         rxPct = 14 + Math.sin(tAnim * 1.8) * 0.5
@@ -195,8 +205,9 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
         rebuildTrail(0)
         lastTrail = now
       }
-    }, FRAME_MS)
-    return () => clearInterval(id)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   useEffect(() => {
@@ -211,6 +222,10 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
     let wsAlive = false
 
     function applyMsg(msg: any) {
+      // Sync clock with server on every message that carries serverNow.
+      if (typeof msg.serverNow === "number") {
+        serverOffsetRef.current = msg.serverNow - Date.now()
+      }
       if (msg.type === "running") {
         if (msg.startedAt) startedAtRef.current = msg.startedAt
         if (phaseRef.current !== "running") { setPhaseSafe("running"); haptic("light") }
@@ -234,9 +249,12 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
     }
 
     function applyState(s: any) {
-      if (s.phase === "running") applyMsg({ type: "running", startedAt: s.startedAt })
-      else if (s.phase === "crashed") applyMsg({ type: "crash", crashPoint: s.crashPoint, startedAt: s.startedAt })
-      else if (s.phase === "waiting") applyMsg({ type: "waiting", waitingEndsAt: s.waitingEndsAt })
+      if (typeof s.serverNow === "number") {
+        serverOffsetRef.current = s.serverNow - Date.now()
+      }
+      if (s.phase === "running") applyMsg({ type: "running", startedAt: s.startedAt, serverNow: s.serverNow })
+      else if (s.phase === "crashed") applyMsg({ type: "crash", crashPoint: s.crashPoint, startedAt: s.startedAt, serverNow: s.serverNow })
+      else if (s.phase === "waiting") applyMsg({ type: "waiting", waitingEndsAt: s.waitingEndsAt, serverNow: s.serverNow })
       if (s.players) setPlayers(s.players)
     }
 
