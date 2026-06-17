@@ -526,29 +526,50 @@ input { font-family: inherit; outline: none; border: none; }
   position: sticky;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-  background: rgba(8, 6, 22, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(8,6,22,0.65) 0%, rgba(8,6,22,0.95) 100%);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.4);
 }
 .bottom-nav button {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 0;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 0 6px;
   background: transparent;
-  color: var(--text-faint);
+  color: rgba(255,255,255,0.45);
   font-size: 11px;
   font-weight: 600;
-  border-radius: 12px;
-  transition: color 0.2s, background 0.2s;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  transition: color 0.22s ease, background 0.22s ease, transform 0.12s ease, border-color 0.22s ease;
 }
-.bottom-nav button.active { color: var(--accent-2); background: rgba(54, 177, 255, 0.1); }
-.bottom-nav .nav-icon { font-size: 20px; line-height: 1; }
+.bottom-nav button:active { transform: scale(0.92); }
+.bottom-nav button.active {
+  color: #fff;
+  background: linear-gradient(180deg, rgba(54,177,255,0.22) 0%, rgba(54,177,255,0.08) 100%);
+  border-color: rgba(54,177,255,0.35);
+  box-shadow: 0 0 18px rgba(54, 177, 255, 0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.bottom-nav button.active::before {
+  content: "";
+  position: absolute;
+  top: -1px; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 3px;
+  background: linear-gradient(90deg, #36b1ff, #b56bff);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 0 10px rgba(54, 177, 255, 0.7);
+}
+.bottom-nav button.active .nav-icon { transform: translateY(-1px) scale(1.08); filter: drop-shadow(0 2px 6px rgba(54, 177, 255, 0.45)); }
+.bottom-nav .nav-icon { font-size: 22px; line-height: 1; transition: transform 0.2s ease, filter 0.2s ease; }
+.bottom-nav .nav-label { font-size: 10px; font-weight: 700; letter-spacing: 0.2px; }
 
 /* ============================================
    Modals / overlays
@@ -1871,31 +1892,35 @@ input { font-family: inherit; outline: none; border: none; }
 }
 .gift-grid.mini { grid-template-columns: repeat(4, 1fr); gap: 8px; }
 
+/* Flat dark gift cards — gift art is the hero, no colored background */
 .gift-card {
-  --gift-bg: #555;
+  --gift-bg: transparent;
   position: relative;
-  aspect-ratio: 1 / 1.15;
-  border-radius: 14px;
-  background: linear-gradient(160deg, var(--gift-bg) 0%, color-mix(in srgb, var(--gift-bg) 60%, #000 40%) 100%);
-  border: 2px solid rgba(255,255,255,0.08);
+  aspect-ratio: 1 / 1.18;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(20,18,38,0.55) 0%, rgba(10,8,22,0.75) 100%);
+  border: 1px solid rgba(255,255,255,0.06);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 8px 6px;
+  padding: 10px 6px 8px;
   cursor: pointer;
   overflow: hidden;
-  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.18s ease;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.18s ease, background 0.18s ease;
   user-select: none;
 }
 .gift-card:active { transform: scale(0.96); }
-.gift-card.disabled { opacity: 0.45; cursor: not-allowed; }
-.gift-card.picked { border-color: #ffd166; box-shadow: 0 0 16px rgba(255, 209, 102, 0.5); }
+.gift-card:hover { border-color: rgba(255,255,255,0.14); }
+.gift-card.disabled { opacity: 0.42; cursor: not-allowed; }
+.gift-card.picked { border-color: #ffd166; box-shadow: 0 0 18px rgba(255, 209, 102, 0.45); }
 
-.gift-card.rarity-rare      { box-shadow: 0 0 0 1px rgba(56, 178, 255, 0.4) inset; }
-.gift-card.rarity-epic      { box-shadow: 0 0 0 1px rgba(186, 100, 255, 0.55) inset, 0 0 18px rgba(186, 100, 255, 0.18); }
-.gift-card.rarity-legendary { box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.75) inset, 0 0 22px rgba(255, 209, 102, 0.28); }
+/* Subtle rarity tint — just a soft glow halo behind the gift, no full-card color */
+.gift-card.rarity-uncommon { border-color: rgba(95, 209, 106, 0.18); }
+.gift-card.rarity-rare      { border-color: rgba(56, 178, 255, 0.28); box-shadow: 0 0 14px rgba(56, 178, 255, 0.10); }
+.gift-card.rarity-epic      { border-color: rgba(186, 100, 255, 0.40); box-shadow: 0 0 18px rgba(186, 100, 255, 0.18); }
+.gift-card.rarity-legendary { border-color: rgba(255, 209, 102, 0.55); box-shadow: 0 0 22px rgba(255, 209, 102, 0.22); }
 .gift-card.rarity-legendary::before {
   content: ""; position: absolute; inset: -50%;
-  background: conic-gradient(from 0deg, transparent 0%, rgba(255,209,102,0.3) 12%, transparent 25%);
-  animation: legendarySpin 5s linear infinite;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(255,209,102,0.18) 12%, transparent 25%);
+  animation: legendarySpin 6s linear infinite;
   pointer-events: none;
 }
 @keyframes legendarySpin { to { transform: rotate(360deg); } }
@@ -1919,11 +1944,23 @@ input { font-family: inherit; outline: none; border: none; }
 .gift-art-emoji { font-size: 38px; line-height: 1; }
 .gift-art.mini .gift-art-emoji { font-size: 28px; }
 .gift-grid.mini .gift-art { font-size: 28px; }
-.gift-name { font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.4); position: relative; z-index: 1; }
+.gift-name {
+  font-size: 12px; font-weight: 700; color: #fff;
+  text-align: center; line-height: 1.2;
+  margin-top: 6px; position: relative; z-index: 1;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 0 4px;
+}
 .gift-price, .gift-value {
-  font-size: 12px; font-weight: 800; color: #fff;
-  background: rgba(0,0,0,0.32); padding: 2px 7px; border-radius: 999px;
-  margin-top: 4px; position: relative; z-index: 1;
+  font-size: 12px; font-weight: 800; color: #36b1ff;
+  margin-top: 5px; position: relative; z-index: 1;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.gift-price::before, .gift-value::before {
+  content: ""; display: inline-block; width: 12px; height: 12px;
+  background: #36b1ff;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'><path d='M28 4l24 14v20L28 52 4 38V18L28 4zm0 8L12 22v12l16 10 16-10V22L28 12z' fill='black'/></svg>") center/contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'><path d='M28 4l24 14v20L28 52 4 38V18L28 4zm0 8L12 22v12l16 10 16-10V22L28 12z' fill='black'/></svg>") center/contain no-repeat;
 }
 .gift-rarity-badge {
   position: absolute; top: 5px; left: 5px;
