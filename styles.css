@@ -745,3 +745,101 @@ button { font-family: inherit; }
 
 /* iOS WebView perf: turn off heavy filter on stars */
 .stars, .stars-2 { will-change: auto; }
+
+
+/* ===== v7: iOS perf overrides — kill all expensive filters/animations ===== */
+
+/* Stars: NO animation (was killing iOS WebView CPU). Static background only. */
+.stars, .stars-2 {
+  animation: none !important;
+  will-change: auto !important;
+}
+.stars-2 { display: none !important; } /* one star layer is enough */
+
+/* Rocket: NO drop-shadow filters (kills iOS GPU). Glow comes from a static blurred gradient inside SVG. */
+.rocket-wrap {
+  position: absolute !important;
+  top: 0; left: 0;
+  z-index: 50 !important;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition: none !important;
+  line-height: 0;
+  /* Single transform property set from JS via translate3d for GPU layer */
+  transform: translate3d(0,0,0);
+}
+.rocket-svg {
+  display: block;
+  /* No filter — SVG inline gradients are GPU-cheap. */
+}
+
+/* Big multiplier: single text-shadow (was 3 layered). */
+.running-big {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  transform: translate3d(-50%, -50%, 0);
+  font-size: 64px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+  letter-spacing: -2px;
+  z-index: 4;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Countdown big: single text-shadow, no pulse animation. */
+.countdown-big {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  transform: translate3d(-50%, -50%, 0);
+  font-size: 130px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+  letter-spacing: -4px;
+  z-index: 4;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  animation: none !important;
+}
+
+/* Chart trail — simple stroke, no blur filter */
+.chart { z-index: 2 !important; }
+.chart path { filter: none !important; }
+
+/* Planet: simple gradient, no animation. */
+.sky .planet-bg {
+  display: block !important;
+  position: absolute;
+  top: 8%;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ffb98a 0%, #d96a3e 45%, #5a2812 90%);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+  animation: none !important;
+}
+.sky .planet-bg::before { display: none !important; }
+
+/* Hide all legacy / animated overlays */
+.big-multiplier { display: none !important; }
+.countdown-wrap { display: none !important; }
+.live-tape { display: none !important; }
+.crash-overlay { display: none !important; }
+
+/* Current pill */
+.pill.current-pill {
+  background: linear-gradient(135deg, #36b1ff 0%, #5acbff 100%);
+  color: #fff;
+  font-weight: 800;
+  min-width: 64px;
+  text-align: center;
+  box-shadow: none;
+  animation: none !important;
+}
