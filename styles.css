@@ -2297,9 +2297,10 @@ input { font-family: inherit; outline: none; border: none; }
   position: relative;
   width: 200px; height: 200px;
   border-radius: 50%;
-  /* Green arc = win (top portion 0..var(--win-deg)), red = lose */
+  /* Green arc = win, starts at top (12 o'clock) going clockwise for var(--win-deg).
+     Needle also starts at top (rotate 0) going clockwise — angular alignment must match. */
   background:
-    conic-gradient(from -90deg,
+    conic-gradient(from 0deg,
       #2ed573 0deg, #2ed573 var(--win-deg, 180deg),
       #ff4757 var(--win-deg, 180deg), #ff4757 360deg);
   box-shadow:
