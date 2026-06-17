@@ -210,6 +210,8 @@ function UpgradePanel({
   const [spinning, setSpinning] = useState(false)
   const [result, setResult] = useState<null | { success: boolean; value: number; chance: number; mult: number }>(null)
   const spinnerRef = useRef<HTMLDivElement | null>(null)
+  const [resultKind, setResultKind] = useState<"" | "win" | "lose">("")
+  const [showConfetti, setShowConfetti] = useState(false)
 
   const selected = useMemo(() => inventory.find((g) => g.id === selectedId) || null, [inventory, selectedId])
   useEffect(() => {
@@ -223,28 +225,42 @@ function UpgradePanel({
     if (!selected || spinning || busy) return
     setSpinning(true)
     setResult(null)
+    setResultKind("")
+    setShowConfetti(false)
     setBusy("upgrade:" + selected.id)
     haptic("medium")
     try {
       const r = await api.giftsUpgrade(selected.id, mult)
-      // Animate spinner needle for ~1.4s then reveal result.
-      const targetPct = r.success ? r.chance * 100 * 0.5 : 100 - (1 - r.chance) * 100 * 0.5
+      // Win arc spans 0..winDeg from top (-90deg start).
+      // Needle does 4 full revolutions (1440deg) + lands in the middle of the win/lose arc.
+      const winDeg = Math.max(8, Math.min(352, r.chance * 360))
+      const landDeg = r.success
+        ? (winDeg * 0.5) + (Math.random() * winDeg * 0.4 - winDeg * 0.2) // middle of green arc ±20%
+        : winDeg + ((360 - winDeg) * 0.5) + (Math.random() * (360 - winDeg) * 0.4 - (360 - winDeg) * 0.2)
+      const spinTarget = 1440 + landDeg
       if (spinnerRef.current) {
-        spinnerRef.current.style.setProperty("--spin-target", `${Math.min(98, Math.max(2, targetPct))}%`)
-        spinnerRef.current.classList.remove("spinning")
-        // restart animation
+        spinnerRef.current.style.setProperty("--win-deg", `${winDeg}deg`)
+        spinnerRef.current.style.setProperty("--spin-target", `${spinTarget}deg`)
+        spinnerRef.current.classList.remove("spinning", "result-win", "result-lose")
         void spinnerRef.current.offsetWidth
         spinnerRef.current.classList.add("spinning")
       }
       setTimeout(() => {
         setResult({ success: r.success, value: r.gift.value, chance: r.chance, mult: r.multiplier })
+        setResultKind(r.success ? "win" : "lose")
+        if (spinnerRef.current) {
+          spinnerRef.current.classList.add(r.success ? "result-win" : "result-lose")
+        }
+        if (r.success) setShowConfetti(true)
         haptic(r.success ? "success" : "error")
         showToast(r.success ? t("gift_up_win") : t("gift_up_lose"), r.success ? "ok" : "err")
         if (r.success) setSelectedId(r.gift.id); else setSelectedId(null)
         onChanged()
         setSpinning(false)
         setBusy(null)
-      }, 1400)
+        // Clear confetti after animation ends
+        setTimeout(() => setShowConfetti(false), 1200)
+      }, 2600)
     } catch (e: any) {
       showToast(e?.message || "error", "err")
       haptic("error")
@@ -257,7 +273,7 @@ function UpgradePanel({
     <div className="upgrade-panel">
       <div className="up-target">
         {selected && selected.catalog ? (
-          <div className={"gift-card preview rarity-" + selected.catalog.rarity} style={{ "--gift-bg": selected.catalog.bg } as React.CSSProperties}>
+          <div className={"gift-card preview rarity-" + selected.catalog.rarity + (spinning ? " spinning" : "")} style={{ "--gift-bg": selected.catalog.bg } as React.CSSProperties}>
             {selected.level > 1 && <div className="gift-level">L{selected.level}</div>}
             <GiftArt src={selected.catalog.image} emoji={selected.catalog.emoji} />
             <div className="gift-name">{selected.catalog.name}</div>
@@ -266,7 +282,15 @@ function UpgradePanel({
         ) : (
           <div className="up-pick-hint">{t("gift_up_pick")}</div>
         )}
-        <div className="up-arrow">{result?.success ? "\u2728" : result && !result.success ? "\ud83d\udca5" : "\u2192"}</div>
+        {result?.success ? (
+          <div className="up-arrow">{"\u2728"}</div>
+        ) : result && !result.success ? (
+          <div className="up-arrow">{"\ud83d\udca5"}</div>
+        ) : (
+          <div className={"up-arrow chevrons " + (spinning ? "go" : "")}>
+            <span /><span /><span />
+          </div>
+        )}
         <div className={"up-reward " + (result ? (result.success ? "win" : "lose") : "")}>
           {selected ? (
             <>
@@ -280,16 +304,39 @@ function UpgradePanel({
         </div>
       </div>
 
-      <div className="up-spinner-wrap">
-        <div ref={spinnerRef} className="up-spinner">
-          <div className="up-spinner-track">
-            <div className="up-spinner-fill" style={{ width: `${approxChance}%` }} />
+      <div className="up-roulette-wrap">
+        <div ref={spinnerRef} className="up-roulette" style={{ "--win-deg": `${approxChance * 3.6}deg` } as React.CSSProperties}>
+          <div className="up-roulette-arrow" />
+          <div className="up-roulette-needle" />
+          <div className="up-roulette-center">
+            <div className="up-roulette-pct">{approxChance}%</div>
+            <div className="up-roulette-pct-label">{t("gift_chance")}</div>
           </div>
-          <div className="up-spinner-needle" />
+          {showConfetti && (
+            <div className="up-confetti">
+              {Array.from({ length: 24 }).map((_, i) => {
+                const ang = (i / 24) * Math.PI * 2 + Math.random() * 0.4
+                const dist = 80 + Math.random() * 70
+                const colors = ["#ffd166", "#6ee7ff", "#2ed573", "#ff6b9d", "#a17bff"]
+                return (
+                  <span
+                    key={i}
+                    style={{
+                      background: colors[i % colors.length],
+                      animationDelay: `${Math.random() * 0.15}s`,
+                      "--x": `${Math.cos(ang) * dist}px`,
+                      "--y": `${Math.sin(ang) * dist}px`,
+                      "--rot": `${Math.random() * 720 - 360}deg`,
+                    } as React.CSSProperties}
+                  />
+                )
+              })}
+            </div>
+          )}
         </div>
-        <div className="up-spinner-labels">
-          <span>{t("gift_win")} {approxChance}%</span>
-          <span>{t("gift_lose")} {100 - approxChance}%</span>
+        <div className="up-roulette-labels">
+          <span className="up-rl-win">● {t("gift_win")} {approxChance}%</span>
+          <span className="up-rl-lose">● {t("gift_lose")} {100 - approxChance}%</span>
         </div>
       </div>
 

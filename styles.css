@@ -1906,22 +1906,30 @@ input { font-family: inherit; outline: none; border: none; }
   overflow: hidden;
   transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.18s ease, background 0.18s ease;
   user-select: none;
+  /* Fix scrolling overlap: isolate each card's stacking context + paint layer */
+  contain: layout paint style;
+  isolation: isolate;
+  z-index: 0;
+  transform: translateZ(0);
+  will-change: transform;
 }
+.gift-card.picked, .gift-card.spinning { z-index: 2; }
 .gift-card:active { transform: scale(0.96); }
 .gift-card:hover { border-color: rgba(255,255,255,0.14); }
 .gift-card.disabled { opacity: 0.42; cursor: not-allowed; }
 .gift-card.picked { border-color: #ffd166; box-shadow: 0 0 18px rgba(255, 209, 102, 0.45); }
 
 /* Subtle rarity tint — just a soft glow halo behind the gift, no full-card color */
-.gift-card.rarity-uncommon { border-color: rgba(95, 209, 106, 0.18); }
-.gift-card.rarity-rare      { border-color: rgba(56, 178, 255, 0.28); box-shadow: 0 0 14px rgba(56, 178, 255, 0.10); }
-.gift-card.rarity-epic      { border-color: rgba(186, 100, 255, 0.40); box-shadow: 0 0 18px rgba(186, 100, 255, 0.18); }
-.gift-card.rarity-legendary { border-color: rgba(255, 209, 102, 0.55); box-shadow: 0 0 22px rgba(255, 209, 102, 0.22); }
+.gift-card.rarity-uncommon { border-color: rgba(95, 209, 106, 0.20); box-shadow: inset 0 0 12px rgba(95, 209, 106, 0.06); }
+.gift-card.rarity-rare      { border-color: rgba(56, 178, 255, 0.30); box-shadow: inset 0 0 14px rgba(56, 178, 255, 0.10); }
+.gift-card.rarity-epic      { border-color: rgba(186, 100, 255, 0.45); box-shadow: inset 0 0 18px rgba(186, 100, 255, 0.15); }
+.gift-card.rarity-legendary { border-color: rgba(255, 209, 102, 0.55); box-shadow: inset 0 0 22px rgba(255, 209, 102, 0.18); }
 .gift-card.rarity-legendary::before {
-  content: ""; position: absolute; inset: -50%;
-  background: conic-gradient(from 0deg, transparent 0%, rgba(255,209,102,0.18) 12%, transparent 25%);
-  animation: legendarySpin 6s linear infinite;
+  content: ""; position: absolute; inset: -8px;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(255,209,102,0.30) 10%, transparent 22%);
+  animation: legendarySpin 8s linear infinite;
   pointer-events: none;
+  z-index: 0;
 }
 @keyframes legendarySpin { to { transform: rotate(360deg); } }
 
@@ -2031,35 +2039,170 @@ input { font-family: inherit; outline: none; border: none; }
 .up-reward-chance { font-size: 10px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.5px; }
 .up-reward-empty { font-size: 28px; color: rgba(255,255,255,0.25); }
 
-.up-spinner-wrap { padding: 6px 4px; }
-.up-spinner {
+/* ===== Upgrade roulette wheel (v23 fancy animation) ===== */
+.up-roulette-wrap {
   position: relative;
-  height: 32px;
-  border-radius: 999px;
-  overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 6px 4px 4px;
 }
-.up-spinner-track {
-  width: 100%; height: 100%;
-  background: linear-gradient(90deg, #2ed573 0%, #2ed573 var(--win-edge, 50%), #ff4757 var(--win-edge, 50%), #ff4757 100%);
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.12);
+.up-roulette {
+  position: relative;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  /* Green arc = win (top portion 0..var(--win-deg)), red = lose */
+  background:
+    conic-gradient(from -90deg,
+      #2ed573 0deg, #2ed573 var(--win-deg, 180deg),
+      #ff4757 var(--win-deg, 180deg), #ff4757 360deg);
+  box-shadow:
+    0 0 0 4px rgba(20, 24, 40, 0.9),
+    0 0 0 5px rgba(255,255,255,0.08),
+    0 0 30px rgba(54,177,255,0.25),
+    inset 0 0 25px rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  isolation: isolate;
 }
-.up-spinner-fill {
-  display: none;  /* split is via gradient stops via inline style on track replacement; we use needle instead */
+.up-roulette::before {
+  /* Tick marks ring */
+  content: ""; position: absolute; inset: 4px;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(rgba(255,255,255,0.18) 0deg 1.5deg, transparent 1.5deg 18deg);
+  -webkit-mask: radial-gradient(circle, transparent 80px, #000 80px, #000 92px, transparent 92px);
+          mask: radial-gradient(circle, transparent 80px, #000 80px, #000 92px, transparent 92px);
+  z-index: 1;
+  pointer-events: none;
 }
-.up-spinner-needle {
-  position: absolute; top: -4px; bottom: -4px; width: 3px;
-  left: 50%; transform: translateX(-50%);
-  background: #fff; border-radius: 2px;
-  box-shadow: 0 0 8px rgba(255,255,255,0.9);
-  transition: left 1.3s cubic-bezier(0.18, 0.9, 0.3, 1);
+.up-roulette::after {
+  /* Inner hub */
+  content: ""; position: absolute; inset: 24px;
+  background:
+    radial-gradient(circle at 50% 35%, #1c2238 0%, #0a0d1c 70%);
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.6), inset 0 2px 0 rgba(255,255,255,0.05);
 }
-.up-spinner.spinning .up-spinner-needle { left: var(--spin-target, 50%); }
-.up-spinner-labels {
-  display: flex; justify-content: space-between;
-  margin-top: 6px; font-size: 10px; color: rgba(255,255,255,0.55);
+.up-roulette-arrow {
+  /* Triangle pointer at top, points down into the wheel */
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 18px solid #ffd166;
+  filter: drop-shadow(0 0 6px rgba(255,209,102,0.9));
+  z-index: 5;
+}
+.up-roulette-needle {
+  /* Spinning hand inside the wheel */
+  position: absolute; top: 50%; left: 50%;
+  width: 6px; height: 95px;
+  background: linear-gradient(180deg, #ffffff 0%, #ffd166 100%);
+  border-radius: 3px;
+  transform-origin: 50% 100%;
+  transform: translate(-50%, -100%) rotate(0deg);
+  box-shadow: 0 0 12px rgba(255,255,255,0.85), 0 0 24px rgba(255,209,102,0.55);
+  z-index: 3;
+  transition: transform 2.5s cubic-bezier(0.17, 0.85, 0.25, 1);
+}
+.up-roulette-needle::after {
+  /* Hub cap */
+  content: ""; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
+  width: 18px; height: 18px;
+  background: radial-gradient(circle, #ffd166 0%, #b87900 80%);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0,0,0,0.6);
+}
+.up-roulette.spinning .up-roulette-needle {
+  transform: translate(-50%, -100%) rotate(var(--spin-target, 720deg));
+}
+.up-roulette-center {
+  position: relative; z-index: 4;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-weight: 900;
+}
+.up-roulette-pct {
+  font-size: 28px; color: #fff;
+  text-shadow: 0 0 10px rgba(54,177,255,0.7);
+  letter-spacing: -0.5px;
+}
+.up-roulette-pct-label {
+  font-size: 9px; color: rgba(255,255,255,0.55);
+  text-transform: uppercase; letter-spacing: 1.5px;
+}
+.up-roulette.result-win  { animation: rouletteWin 0.6s ease-out; }
+.up-roulette.result-lose { animation: rouletteLose 0.5s ease-out; }
+@keyframes rouletteWin {
+  0% { transform: scale(1); box-shadow: 0 0 0 4px rgba(20,24,40,0.9), 0 0 60px rgba(46,213,115,0.9), inset 0 0 25px rgba(0,0,0,0.55); }
+  100% { transform: scale(1); }
+}
+@keyframes rouletteLose {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+/* Spinning chevrons in the up-arrow slot */
+.up-arrow.chevrons {
+  display: flex; gap: 2px; justify-content: center; align-items: center;
+}
+.up-arrow.chevrons span {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-right: 3px solid #6ee7ff;
+  border-bottom: 3px solid #6ee7ff;
+  transform: rotate(-45deg);
+  opacity: 0.3;
+  filter: drop-shadow(0 0 4px rgba(110,231,255,0.6));
+}
+.up-arrow.chevrons.go span {
+  animation: chevPulse 0.6s ease-in-out infinite;
+}
+.up-arrow.chevrons.go span:nth-child(1) { animation-delay: 0s; }
+.up-arrow.chevrons.go span:nth-child(2) { animation-delay: 0.15s; }
+.up-arrow.chevrons.go span:nth-child(3) { animation-delay: 0.30s; }
+@keyframes chevPulse {
+  0%, 100% { opacity: 0.2; transform: rotate(-45deg) translate(0,0); }
+  50% { opacity: 1; transform: rotate(-45deg) translate(2px,2px); }
+}
+
+/* Source-gift glow + jiggle while wheel spins */
+.gift-card.spinning {
+  animation: srcGiftPulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes srcGiftPulse {
+  from { box-shadow: 0 0 0 rgba(255,209,102,0.0), inset 0 0 22px rgba(255,209,102,0.18); transform: translateZ(0) scale(1); }
+  to   { box-shadow: 0 0 28px rgba(255,209,102,0.6), inset 0 0 30px rgba(255,209,102,0.3); transform: translateZ(0) scale(1.03); }
+}
+
+/* Confetti burst on win */
+.up-confetti {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.up-confetti span {
+  position: absolute; left: 50%; top: 50%;
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  opacity: 0;
+  --x: 100px; --y: -120px; --rot: 0deg;
+  animation: confettiBurst 1.1s cubic-bezier(0.15, 0.9, 0.4, 1) forwards;
+}
+@keyframes confettiBurst {
+  0%   { transform: translate(-50%, -50%) scale(0) rotate(0deg);   opacity: 1; }
+  60%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1) rotate(var(--rot)); opacity: 0; }
+}
+.up-roulette-labels {
+  display: flex; justify-content: space-between; width: 100%; max-width: 240px;
+  font-size: 10px; color: rgba(255,255,255,0.55);
   text-transform: uppercase; letter-spacing: 0.5px;
+  margin-top: 4px;
 }
+.up-rl-win  { color: #2ed573; }
+.up-rl-lose { color: #ff4757; }
 
 .up-mults {
   display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
