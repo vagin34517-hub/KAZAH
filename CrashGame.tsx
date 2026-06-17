@@ -325,33 +325,57 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
         <div ref={multRef} className="running-big" style={HIDDEN}>1.00</div>
 
         <div ref={rocketRef} className="rocket-wrap">
-          <svg className="rocket-svg" viewBox="0 0 40 64" width="46" height="74">
+          <svg className="rocket-svg" viewBox="0 0 48 80" width="54" height="90">
             <defs>
               <linearGradient id="rocketBody" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#dce3ee" />
-                <stop offset="50%" stopColor="#ffffff" />
-                <stop offset="100%" stopColor="#a0acc0" />
+                <stop offset="0%" stopColor="#b8c2d4" />
+                <stop offset="35%" stopColor="#ffffff" />
+                <stop offset="65%" stopColor="#ffffff" />
+                <stop offset="100%" stopColor="#7a8398" />
               </linearGradient>
               <linearGradient id="rocketNose" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ff5a6c" />
-                <stop offset="100%" stopColor="#c8344a" />
+                <stop offset="0%" stopColor="#ff6a7d" />
+                <stop offset="100%" stopColor="#b82a40" />
               </linearGradient>
-              <radialGradient id="flame" cx="0.5" cy="0" r="1">
-                <stop offset="0%" stopColor="#ffe66d" stopOpacity="1" />
-                <stop offset="50%" stopColor="#ffb347" stopOpacity="0.85" />
+              <linearGradient id="finL" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#b82a40" />
+                <stop offset="100%" stopColor="#ff5a6c" />
+              </linearGradient>
+              <linearGradient id="finR" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#ff5a6c" />
+                <stop offset="100%" stopColor="#b82a40" />
+              </linearGradient>
+              <radialGradient id="window" cx="0.35" cy="0.35" r="0.7">
+                <stop offset="0%" stopColor="#a8e8ff" />
+                <stop offset="60%" stopColor="#36b1ff" />
+                <stop offset="100%" stopColor="#0a3a6a" />
+              </radialGradient>
+              <radialGradient id="flame" cx="0.5" cy="0.1" r="0.9">
+                <stop offset="0%" stopColor="#fffae0" stopOpacity="1" />
+                <stop offset="30%" stopColor="#ffd166" stopOpacity="0.95" />
+                <stop offset="65%" stopColor="#ff8a3c" stopOpacity="0.8" />
                 <stop offset="100%" stopColor="#ff4757" stopOpacity="0" />
               </radialGradient>
             </defs>
-            <path d="M5 42 L1 58 L14 50 Z" fill="#ff6b35" />
-            <path d="M35 42 L39 58 L26 50 Z" fill="#ff6b35" />
-            <path d="M14 14 Q14 5 20 1 Q26 5 26 14 L26 50 L14 50 Z" fill="url(#rocketBody)" stroke="#5a6478" strokeWidth="0.6" />
-            <path d="M14 14 Q14 5 20 1 Q26 5 26 14 Z" fill="url(#rocketNose)" />
-            <circle cx="20" cy="22" r="4.2" fill="#36b1ff" stroke="#0d4a78" strokeWidth="0.8" />
-            <circle cx="18.8" cy="20.8" r="1.3" fill="rgba(255,255,255,0.75)" />
-            <line x1="14" y1="36" x2="26" y2="36" stroke="#5a6478" strokeWidth="0.5" />
-            <rect x="16" y="50" width="8" height="4" fill="#4a5060" rx="1" />
-            {/* Static flame at the bottom of rocket (oriented along nose-tail axis) */}
-            <ellipse cx="20" cy="60" rx="6" ry="4" fill="url(#flame)" />
+            {/* Flame */}
+            <ellipse cx="24" cy="72" rx="9" ry="7" fill="url(#flame)" />
+            <ellipse cx="24" cy="68" rx="5" ry="4" fill="#fffae0" opacity="0.9" />
+            {/* Left fin */}
+            <path d="M14 48 L4 66 L17 58 Z" fill="url(#finL)" stroke="#7a1626" strokeWidth="0.6" strokeLinejoin="round" />
+            {/* Right fin */}
+            <path d="M34 48 L44 66 L31 58 Z" fill="url(#finR)" stroke="#7a1626" strokeWidth="0.6" strokeLinejoin="round" />
+            {/* Body */}
+            <path d="M16 18 Q16 6 24 2 Q32 6 32 18 L32 60 L16 60 Z" fill="url(#rocketBody)" stroke="#5a6478" strokeWidth="0.8" strokeLinejoin="round" />
+            {/* Nose */}
+            <path d="M16 18 Q16 6 24 2 Q32 6 32 18 Z" fill="url(#rocketNose)" stroke="#7a1626" strokeWidth="0.5" />
+            {/* Mid stripe */}
+            <rect x="16" y="42" width="16" height="3" fill="#ff5a6c" opacity="0.85" />
+            {/* Window */}
+            <circle cx="24" cy="26" r="5" fill="url(#window)" stroke="#0d3a5e" strokeWidth="0.9" />
+            <ellipse cx="22" cy="24" rx="1.6" ry="1" fill="rgba(255,255,255,0.85)" />
+            {/* Nozzle */}
+            <rect x="18" y="60" width="12" height="5" fill="#3a4050" rx="1" />
+            <rect x="19" y="63" width="10" height="2" fill="#1a1d28" rx="0.5" />
           </svg>
         </div>
       </div>
