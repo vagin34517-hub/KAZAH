@@ -210,7 +210,6 @@ function UpgradePanel({
   const [spinning, setSpinning] = useState(false)
   const [result, setResult] = useState<null | { success: boolean; value: number; chance: number; mult: number }>(null)
   const spinnerRef = useRef<HTMLDivElement | null>(null)
-  const [resultKind, setResultKind] = useState<"" | "win" | "lose">("")
   const [showConfetti, setShowConfetti] = useState(false)
 
   const selected = useMemo(() => inventory.find((g) => g.id === selectedId) || null, [inventory, selectedId])
@@ -225,7 +224,6 @@ function UpgradePanel({
     if (!selected || spinning || busy) return
     setSpinning(true)
     setResult(null)
-    setResultKind("")
     setShowConfetti(false)
     setBusy("upgrade:" + selected.id)
     haptic("medium")
@@ -247,7 +245,6 @@ function UpgradePanel({
       }
       setTimeout(() => {
         setResult({ success: r.success, value: r.gift.value, chance: r.chance, mult: r.multiplier })
-        setResultKind(r.success ? "win" : "lose")
         if (spinnerRef.current) {
           spinnerRef.current.classList.add(r.success ? "result-win" : "result-lose")
         }

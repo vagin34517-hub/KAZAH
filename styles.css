@@ -1180,7 +1180,12 @@ input { font-family: inherit; outline: none; border: none; }
   background: linear-gradient(180deg, rgba(20, 16, 50, 0.7), rgba(10, 8, 30, 0.5));
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  /* Constrain on wide screens / desktop so cells don't blow up to 200px each */
+  max-width: 440px;
+  margin: 0 auto;
+  width: 100%;
 }
+.mines-cell { font-size: clamp(22px, 7vw, 32px); }
 .mines-cell {
   aspect-ratio: 1;
   border-radius: 12px;
