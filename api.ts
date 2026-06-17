@@ -91,6 +91,42 @@ export const api = {
   withdrawRequest: (amount: number, address: string) =>
     request<{ ok: true; id: number }>("/api/withdraw/request", { amount, address }),
   withdrawList: () => request<{ items: WithdrawItem[] }>("/api/withdraw/list"),
+
+  giftsCatalog: () => request<{ items: GiftCatalogItem[]; multipliers: number[]; sellFee: number; maxLevel: number }>("/api/gifts/catalog"),
+  giftsInventory: () => request<{ items: OwnedGift[]; totalValue: number; balance: number }>("/api/gifts/inventory"),
+  giftsBuy: (giftId: string) => request<{ ok: true; ownedId: number; newBalance: number; gift: OwnedGift }>("/api/gifts/buy", { giftId }),
+  giftsUpgrade: (ownedId: number, multiplier: number) =>
+    request<GiftUpgradeResult>("/api/gifts/upgrade", { ownedId, multiplier }),
+  giftsSell: (ownedId: number) =>
+    request<{ ok: true; payout: number; fee: number; newBalance: number }>("/api/gifts/sell", { ownedId }),
+}
+
+export type GiftCatalogItem = {
+  id: string
+  slug?: string
+  emoji: string
+  image?: string
+  name: string
+  price: number
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
+  bg: string
+}
+export type OwnedGift = {
+  id: number
+  giftId: string
+  catalog: GiftCatalogItem | null
+  level: number
+  value: number
+  baseValue?: number
+  createdAt?: number
+  updatedAt?: number
+}
+export type GiftUpgradeResult = {
+  ok: true
+  success: boolean
+  chance: number
+  multiplier: number
+  gift: OwnedGift
 }
 
 export function deriveWsUrl(): string {

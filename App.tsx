@@ -9,6 +9,7 @@ import { Mines } from "./Mines"
 import { Leaderboard } from "./Leaderboard"
 import { DepositModal } from "./DepositModal"
 import { Splash } from "./Splash"
+import { Market } from "./Market"
 import "./styles.css"
 
 export default function App() {
@@ -62,6 +63,7 @@ export default function App() {
       <main className="main-content">
         {tab === "crash" && <CrashGame skin={skin} bg={bg} />}
         {tab === "mines" && <Mines />}
+        {tab === "market" && <Market />}
         {tab === "leaderboard" && <Leaderboard myUserId={me?.userId} />}
         {tab === "profile" && <Profile me={me} onOpenSettings={() => setSettingsOpen(true)} />}
       </main>
