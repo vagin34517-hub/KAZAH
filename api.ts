@@ -26,6 +26,8 @@ export type MeInfo = {
   inviteUrl: string;
   photo?: string | null;
   username?: string | null;
+  activeNow?: number;
+  totalPlayers?: number;
 }
 export type Player = {
   userId: number;

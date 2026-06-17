@@ -31,9 +31,27 @@ export default function App() {
       balance: 0, online: 0, level: 1, xp: 0, xpNext: 10,
       refs: 0, refBalance: 0, inviteUrl: "",
     }
-    api.me().then(setMe).catch(() => setMe(fallback))
-    const i = setInterval(() => api.me().then(setMe).catch(() => {}), 5000)
-    return () => clearInterval(i)
+    // Open-from-chat-list bug: when the WebApp is launched via the chat-list
+    // shortcut (not via /start), initData can arrive a tick AFTER React mounts.
+    // Retry /api/me a few times with backoff before falling back to the
+    // anonymous demo profile so the user doesn't see "0 TON / Игрок".
+    let cancelled = false
+    async function loadMe(attempt = 0): Promise<void> {
+      try {
+        const m = await api.me()
+        if (!cancelled) setMe(m)
+      } catch (e) {
+        if (cancelled) return
+        if (attempt < 4) {
+          setTimeout(() => loadMe(attempt + 1), 250 * (attempt + 1))
+        } else {
+          setMe(fallback)
+        }
+      }
+    }
+    loadMe()
+    const i = setInterval(() => api.me().then((m) => !cancelled && setMe(m)).catch(() => {}), 5000)
+    return () => { cancelled = true; clearInterval(i) }
   }, [])
 
   return (

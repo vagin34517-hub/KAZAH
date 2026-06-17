@@ -326,59 +326,117 @@ export function CrashGame({ skin: _skin, bg }: { skin: string; bg: string }) {
         <div ref={multRef} className="running-big" style={HIDDEN}>1.00</div>
 
         <div ref={rocketRef} className="rocket-wrap">
-          <svg className="rocket-svg" viewBox="0 0 48 80" width="54" height="90">
+          <svg className="rocket-svg" viewBox="0 0 60 140" width="72" height="168">
             <defs>
+              {/* Body: metallic white with chrome edges */}
               <linearGradient id="rocketBody" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#b8c2d4" />
-                <stop offset="35%" stopColor="#ffffff" />
-                <stop offset="65%" stopColor="#ffffff" />
-                <stop offset="100%" stopColor="#7a8398" />
+                <stop offset="0%" stopColor="#8e98ad" />
+                <stop offset="18%" stopColor="#dfe5f0" />
+                <stop offset="50%" stopColor="#ffffff" />
+                <stop offset="82%" stopColor="#cdd3e0" />
+                <stop offset="100%" stopColor="#6a7388" />
               </linearGradient>
+              {/* Nose: deep cherry red gradient */}
               <linearGradient id="rocketNose" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ff6a7d" />
-                <stop offset="100%" stopColor="#b82a40" />
+                <stop offset="0%" stopColor="#ff8090" />
+                <stop offset="45%" stopColor="#e93a52" />
+                <stop offset="100%" stopColor="#9c1c2e" />
               </linearGradient>
+              {/* Nose highlight */}
+              <linearGradient id="noseShine" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+              </linearGradient>
+              {/* Fins */}
               <linearGradient id="finL" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#b82a40" />
+                <stop offset="0%" stopColor="#7a1626" />
+                <stop offset="50%" stopColor="#c8344a" />
                 <stop offset="100%" stopColor="#ff5a6c" />
               </linearGradient>
               <linearGradient id="finR" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#ff5a6c" />
-                <stop offset="100%" stopColor="#b82a40" />
+                <stop offset="50%" stopColor="#c8344a" />
+                <stop offset="100%" stopColor="#7a1626" />
               </linearGradient>
-              <radialGradient id="window" cx="0.35" cy="0.35" r="0.7">
-                <stop offset="0%" stopColor="#a8e8ff" />
-                <stop offset="60%" stopColor="#36b1ff" />
-                <stop offset="100%" stopColor="#0a3a6a" />
+              {/* Window glass */}
+              <radialGradient id="window" cx="0.35" cy="0.32" r="0.75">
+                <stop offset="0%" stopColor="#d4f1ff" />
+                <stop offset="35%" stopColor="#5fc3ff" />
+                <stop offset="75%" stopColor="#1d6cb8" />
+                <stop offset="100%" stopColor="#0a2b50" />
               </radialGradient>
-              <radialGradient id="flame" cx="0.5" cy="0.1" r="0.9">
+              {/* Flame layers */}
+              <radialGradient id="flameOuter" cx="0.5" cy="0.08" r="0.95">
+                <stop offset="0%" stopColor="#ffd166" stopOpacity="0.9" />
+                <stop offset="45%" stopColor="#ff8a3c" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#ff4757" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient id="flameMid" cx="0.5" cy="0.1" r="0.9">
                 <stop offset="0%" stopColor="#fffae0" stopOpacity="1" />
-                <stop offset="30%" stopColor="#ffd166" stopOpacity="0.95" />
-                <stop offset="65%" stopColor="#ff8a3c" stopOpacity="0.8" />
+                <stop offset="40%" stopColor="#ffd166" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#ff8a3c" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient id="flameCore" cx="0.5" cy="0.2" r="0.8">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+                <stop offset="60%" stopColor="#fff4b0" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#ffd166" stopOpacity="0" />
+              </radialGradient>
+              {/* Glow under the rocket */}
+              <radialGradient id="rktGlow" cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0%" stopColor="#ff8a3c" stopOpacity="0.5" />
                 <stop offset="100%" stopColor="#ff4757" stopOpacity="0" />
               </radialGradient>
             </defs>
-            {/* Flame */}
-            <ellipse className="rkt-flame rkt-flame-outer" cx="24" cy="72" rx="9" ry="7" fill="url(#flame)" />
-            <ellipse className="rkt-flame rkt-flame-inner" cx="24" cy="68" rx="5" ry="4" fill="#fffae0" opacity="0.9" />
-            {/* Left fin */}
-            <path d="M14 48 L4 66 L17 58 Z" fill="url(#finL)" stroke="#7a1626" strokeWidth="0.6" strokeLinejoin="round" />
-            {/* Right fin */}
-            <path d="M34 48 L44 66 L31 58 Z" fill="url(#finR)" stroke="#7a1626" strokeWidth="0.6" strokeLinejoin="round" />
-            {/* Body */}
-            <path d="M16 18 Q16 6 24 2 Q32 6 32 18 L32 60 L16 60 Z" fill="url(#rocketBody)" stroke="#5a6478" strokeWidth="0.8" strokeLinejoin="round" />
-            {/* Nose */}
-            <path d="M16 18 Q16 6 24 2 Q32 6 32 18 Z" fill="url(#rocketNose)" stroke="#7a1626" strokeWidth="0.5" />
-            {/* Mid stripe */}
-            <rect x="16" y="42" width="16" height="3" fill="#ff5a6c" opacity="0.85" />
+
+            {/* Soft glow halo behind the rocket */}
+            <ellipse cx="30" cy="118" rx="26" ry="14" fill="url(#rktGlow)" />
+
+            {/* Three-layer flame (long trail) */}
+            <ellipse className="rkt-flame rkt-flame-outer" cx="30" cy="122" rx="13" ry="22" fill="url(#flameOuter)" />
+            <ellipse className="rkt-flame rkt-flame-mid"   cx="30" cy="118" rx="8"  ry="15" fill="url(#flameMid)" />
+            <ellipse className="rkt-flame rkt-flame-inner" cx="30" cy="113" rx="4"  ry="9"  fill="url(#flameCore)" />
+
+            {/* Fins (wider, swept-back) */}
+            <path d="M18 78 L4 110 L20 96 Z"  fill="url(#finL)" stroke="#5a0e1c" strokeWidth="0.7" strokeLinejoin="round" />
+            <path d="M42 78 L56 110 L40 96 Z" fill="url(#finR)" stroke="#5a0e1c" strokeWidth="0.7" strokeLinejoin="round" />
+
+            {/* Body (taller, sleeker) */}
+            <path d="M19 30 Q19 12 30 4 Q41 12 41 30 L41 100 L19 100 Z" fill="url(#rocketBody)" stroke="#4a5266" strokeWidth="0.9" strokeLinejoin="round" />
+
+            {/* Nose cone */}
+            <path d="M19 30 Q19 12 30 4 Q41 12 41 30 Z" fill="url(#rocketNose)" stroke="#5a0e1c" strokeWidth="0.6" />
+            {/* Nose shine */}
+            <path d="M22 14 Q22 8 28 5 L28 26 Q24 22 22 14 Z" fill="url(#noseShine)" />
+
+            {/* Red accent stripe at nose-body joint */}
+            <rect x="19" y="30" width="22" height="2.5" fill="#c8344a" />
+
             {/* Window */}
-            <circle cx="24" cy="26" r="5" fill="url(#window)" stroke="#0d3a5e" strokeWidth="0.9" />
-            <ellipse cx="22" cy="24" rx="1.6" ry="1" fill="rgba(255,255,255,0.85)" />
+            <circle cx="30" cy="46" r="7" fill="url(#window)" stroke="#062241" strokeWidth="1" />
+            <ellipse cx="27" cy="43" rx="2.2" ry="1.4" fill="rgba(255,255,255,0.9)" />
+            <ellipse cx="32" cy="49" rx="0.9" ry="0.6" fill="rgba(255,255,255,0.5)" />
+
+            {/* Mid red stripe (matching nose) */}
+            <rect x="19" y="72" width="22" height="3" fill="#c8344a" />
+            <rect x="19" y="72" width="22" height="1" fill="#ff8090" opacity="0.7" />
+
+            {/* Body shine highlight */}
+            <rect x="22" y="35" width="2" height="60" fill="#ffffff" opacity="0.5" rx="1" />
+
             {/* Nozzle */}
-            <rect x="18" y="60" width="12" height="5" fill="#3a4050" rx="1" />
-            <rect x="19" y="63" width="10" height="2" fill="#1a1d28" rx="0.5" />
+            <rect x="22" y="100" width="16" height="7" fill="#2e3340" rx="1.5" />
+            <rect x="23" y="104" width="14" height="3" fill="#0d1018" rx="0.8" />
+            {/* Nozzle inner glow */}
+            <ellipse cx="30" cy="107" rx="5" ry="1.2" fill="#ffb347" opacity="0.6" />
           </svg>
+          {/* Particle trail (CSS-animated dots) */}
+          <span className="rkt-particle p1" />
+          <span className="rkt-particle p2" />
+          <span className="rkt-particle p3" />
+          <span className="rkt-particle p4" />
         </div>
+        {/* Crash red flash overlay */}
+        <div className={"crash-flash" + (phase === "crashed" ? " active" : "")} />
       </div>
 
       <div className="history-strip">
